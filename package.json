@@ -1,0 +1,88 @@
+{
+  "name": "@unboundcx/sdk",
+  "version": "1.0.0",
+  "description": "Official JavaScript SDK for the Unbound API - A comprehensive toolkit for integrating with Unbound's communication, AI, and data management services",
+  "main": "index.js",
+  "type": "module",
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "keywords": [
+    "unbound",
+    "api",
+    "sdk",
+    "messaging",
+    "voice",
+    "video",
+    "ai",
+    "communication",
+    "javascript",
+    "typescript",
+    "sms",
+    "email",
+    "workflows"
+  ],
+  "author": {
+    "name": "Unbound Team",
+    "email": "support@unbound.cx",
+    "url": "https://unbound.cx"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/unbound/sdk-js.git"
+  },
+  "bugs": {
+    "url": "https://github.com/unbound/sdk-js/issues"
+  },
+  "homepage": "https://docs.unbound.cx/sdk",
+  "files": [
+    "*.js",
+    "services/**/*.js",
+    "transports/**/*.js",
+    "types/**/*.d.ts",
+    "README.md",
+    "LICENSE"
+  ],
+  "exports": {
+    ".": {
+      "import": "./index.js",
+      "require": "./index.cjs"
+    },
+    "./base": {
+      "import": "./base.js"
+    },
+    "./services/*": {
+      "import": "./services/*.js"
+    }
+  },
+  "scripts": {
+    "build": "echo 'Build complete - ESM modules ready'",
+    "test": "echo 'Tests would run here'",
+    "lint": "echo 'Linting would run here'",
+    "prepublishOnly": "npm run build"
+  },
+  "dependencies": {},
+  "optionalDependencies": {
+    "mime-types": "^2.1.35"
+  },
+  "peerDependencies": {
+    "socket.io-client": "^4.0.0"
+  },
+  "peerDependenciesMeta": {
+    "socket.io-client": {
+      "optional": true
+    }
+  },
+  "devDependencies": {},
+  "browserslist": [
+    "defaults",
+    "not IE 11",
+    "not IE_Mob 11",
+    "maintained node versions"
+  ],
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/",
+    "access": "public"
+  }
+}
