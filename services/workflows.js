@@ -39,12 +39,16 @@ export class WorkflowItemsService {
     const params = {
       body: {
         where: {
-          id
-        }
-      }
-    }
+          id,
+        },
+      },
+    };
 
-    const result = await this.sdk._fetch('/object/workflowItems', 'DELETE', params);
+    const result = await this.sdk._fetch(
+      '/object/workflowItems',
+      'DELETE',
+      params,
+    );
     return result;
   }
 
@@ -59,11 +63,15 @@ export class WorkflowItemsService {
     const params = {
       query: {
         expandDetails: true,
-        workflowVersionId
+        workflowVersionId,
       },
-    }
+    };
 
-    const result = await this.sdk._fetch('/object/workflowItems', 'GET', params);
+    const result = await this.sdk._fetch(
+      '/object/workflowItems',
+      'GET',
+      params,
+    );
     return result;
   }
 
@@ -75,10 +83,20 @@ export class WorkflowItemsService {
       },
     );
 
-    return this.sdk.objects.byId(id);
+    return this.sdk.objects.byId({
+      object: 'workflowItems',
+      id,
+    });
   }
 
-  async create({ workflowVersionId, category, type, description, position, settings }) {
+  async create({
+    workflowVersionId,
+    category,
+    type,
+    description,
+    position,
+    settings,
+  }) {
     this.sdk.validateParams(
       { workflowVersionId, category, type },
       {
@@ -100,27 +118,31 @@ export class WorkflowItemsService {
         position,
         settings,
       },
-    }
+    };
 
-    const result = await this.sdk._fetch('/object/workflowItems', 'POST', params);
+    const result = await this.sdk._fetch(
+      '/object/workflowItems',
+      'POST',
+      params,
+    );
     return result;
   }
 
-  async update({ 
-    id, 
-    description, 
-    label, 
-    labelBgColor, 
-    labelTextColor, 
-    descriptionBgColor, 
-    descriptionTextColor, 
-    icon, 
-    iconBgColor, 
-    iconTextColor, 
-    ports, 
-    connections, 
-    position, 
-    settings 
+  async update({
+    id,
+    description,
+    label,
+    labelBgColor,
+    labelTextColor,
+    descriptionBgColor,
+    descriptionTextColor,
+    icon,
+    iconBgColor,
+    iconTextColor,
+    ports,
+    connections,
+    position,
+    settings,
   }) {
     this.sdk.validateParams(
       { id },
@@ -138,7 +160,7 @@ export class WorkflowItemsService {
         ports: { type: 'array', required: false },
         connections: { type: 'object', required: false },
         position: { type: 'object', required: false },
-        settings: { type: 'object', required: false }
+        settings: { type: 'object', required: false },
       },
     );
 
@@ -146,9 +168,12 @@ export class WorkflowItemsService {
     if (description !== undefined) updateData.description = description;
     if (label !== undefined) updateData.label = label;
     if (labelBgColor !== undefined) updateData.labelBgColor = labelBgColor;
-    if (labelTextColor !== undefined) updateData.labelTextColor = labelTextColor;
-    if (descriptionBgColor !== undefined) updateData.descriptionBgColor = descriptionBgColor;
-    if (descriptionTextColor !== undefined) updateData.descriptionTextColor = descriptionTextColor;
+    if (labelTextColor !== undefined)
+      updateData.labelTextColor = labelTextColor;
+    if (descriptionBgColor !== undefined)
+      updateData.descriptionBgColor = descriptionBgColor;
+    if (descriptionTextColor !== undefined)
+      updateData.descriptionTextColor = descriptionTextColor;
     if (icon !== undefined) updateData.icon = icon;
     if (iconBgColor !== undefined) updateData.iconBgColor = iconBgColor;
     if (iconTextColor !== undefined) updateData.iconTextColor = iconTextColor;
@@ -159,13 +184,17 @@ export class WorkflowItemsService {
     const params = {
       body: {
         where: {
-          id
+          id,
         },
-        update: updateData
+        update: updateData,
       },
-    }
+    };
 
-    const result = await this.sdk._fetch('/object/workflowItems', 'PUT', params);
+    const result = await this.sdk._fetch(
+      '/object/workflowItems',
+      'PUT',
+      params,
+    );
     return result;
   }
 }
@@ -175,9 +204,19 @@ export class WorkflowConnectionsService {
     this.sdk = sdk;
   }
 
-  async delete(workflowItemId, workflowItemPortId, inWorkflowItemId, inWorkflowItemPortId) {
+  async delete(
+    workflowItemId,
+    workflowItemPortId,
+    inWorkflowItemId,
+    inWorkflowItemPortId,
+  ) {
     this.sdk.validateParams(
-      { workflowItemId, workflowItemPortId, inWorkflowItemId, inWorkflowItemPortId },
+      {
+        workflowItemId,
+        workflowItemPortId,
+        inWorkflowItemId,
+        inWorkflowItemPortId,
+      },
       {
         workflowItemId: { type: 'string', required: true },
         workflowItemPortId: { type: 'string', required: true },
@@ -192,18 +231,32 @@ export class WorkflowConnectionsService {
           workflowItemId,
           workflowItemPortId,
           inWorkflowItemId,
-          inWorkflowItemPortId
-        }
-      }
-    }
+          inWorkflowItemPortId,
+        },
+      },
+    };
 
-    const result = await this.sdk._fetch('/object/workflowItemConnections', 'DELETE', params);
+    const result = await this.sdk._fetch(
+      '/object/workflowItemConnections',
+      'DELETE',
+      params,
+    );
     return result;
   }
 
-  async create({ workflowItemPortId, workflowItemId, inWorkflowItemId, inWorkflowItemPortId }) {
+  async create({
+    workflowItemPortId,
+    workflowItemId,
+    inWorkflowItemId,
+    inWorkflowItemPortId,
+  }) {
     this.sdk.validateParams(
-      { workflowItemPortId, workflowItemId, inWorkflowItemId, inWorkflowItemPortId },
+      {
+        workflowItemPortId,
+        workflowItemId,
+        inWorkflowItemId,
+        inWorkflowItemPortId,
+      },
       {
         workflowItemPortId: { type: 'string', required: true },
         workflowItemId: { type: 'string', required: true },
@@ -214,14 +267,18 @@ export class WorkflowConnectionsService {
 
     const params = {
       body: {
-        workflowItemPortId, 
-        workflowItemId, 
-        inWorkflowItemId, 
-        inWorkflowItemPortId
+        workflowItemPortId,
+        workflowItemId,
+        inWorkflowItemId,
+        inWorkflowItemPortId,
       },
-    }
+    };
 
-    const result = await this.sdk._fetch('/object/workflowItemConnections', 'POST', params);
+    const result = await this.sdk._fetch(
+      '/object/workflowItemConnections',
+      'POST',
+      params,
+    );
     return result;
   }
 }
@@ -244,7 +301,11 @@ export class WorkflowSessionsService {
       body: sessionData,
     };
 
-    const result = await this.sdk._fetch(`/workflows/${workflowId}/sessions`, 'POST', params);
+    const result = await this.sdk._fetch(
+      `/workflows/${workflowId}/sessions`,
+      'POST',
+      params,
+    );
     return result;
   }
 
@@ -256,7 +317,10 @@ export class WorkflowSessionsService {
       },
     );
 
-    const result = await this.sdk._fetch(`/workflows/sessions/${sessionId}`, 'GET');
+    const result = await this.sdk._fetch(
+      `/workflows/sessions/${sessionId}`,
+      'GET',
+    );
     return result;
   }
 
@@ -273,7 +337,11 @@ export class WorkflowSessionsService {
       body: updateData,
     };
 
-    const result = await this.sdk._fetch(`/workflows/sessions/${sessionId}`, 'PUT', params);
+    const result = await this.sdk._fetch(
+      `/workflows/sessions/${sessionId}`,
+      'PUT',
+      params,
+    );
     return result;
   }
 
@@ -285,7 +353,10 @@ export class WorkflowSessionsService {
       },
     );
 
-    const result = await this.sdk._fetch(`/workflows/sessions/${sessionId}`, 'DELETE');
+    const result = await this.sdk._fetch(
+      `/workflows/sessions/${sessionId}`,
+      'DELETE',
+    );
     return result;
   }
 }

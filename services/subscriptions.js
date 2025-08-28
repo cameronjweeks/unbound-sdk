@@ -20,11 +20,15 @@ export class SocketSubscriptionsService {
 
     const params = {
       query: {
-        sessionId
-      }
-    }
+        sessionId,
+      },
+    };
 
-    const result = await this.sdk._fetch('/subscriptions/socket/connection', 'GET', params);
+    const result = await this.sdk._fetch(
+      '/subscriptions/socket/connection',
+      'GET',
+      params,
+    );
     return result;
   }
 
@@ -41,8 +45,8 @@ export class SocketSubscriptionsService {
       body: {
         sessionId,
         ...subscriptionParams,
-      }
-    }
+      },
+    };
 
     let uri = `/subscriptions/socket/`;
     if (subscriptionParams?.id) {
@@ -63,11 +67,15 @@ export class SocketSubscriptionsService {
 
     const params = {
       body: {
-        sessionId
-      }
-    }
+        sessionId,
+      },
+    };
 
-    const result = await this.sdk._fetch(`/subscriptions/socket/${id}`, 'DELETE', params);
+    const result = await this.sdk._fetch(
+      `/subscriptions/socket/${id}`,
+      'DELETE',
+      params,
+    );
     return result;
   }
 }

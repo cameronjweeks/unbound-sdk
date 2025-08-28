@@ -1,72 +1,241 @@
+/**
+ * Objects Service - Manage data objects in the Unbound platform
+ *
+ * This service supports both new object-based signatures and legacy positional arguments
+ * for backward compatibility. New projects should use the object-based signatures.
+ *
+ * @example
+ * // Preferred (new) usage:
+ * const result = await sdk.objects.query({
+ *   object: 'users',
+ *   select: ['id', 'name', 'email'],
+ *   where: { status: 'active' },
+ *   limit: 100
+ * });
+ *
+ * @example
+ * // Legacy (deprecated) usage still supported:
+ * const result = await sdk.objects.query('users', { status: 'active' });
+ */
 export class ObjectsService {
   constructor(sdk) {
     this.sdk = sdk;
   }
 
-  async byId(id, query = {}) {
-    this.sdk.validateParams(
-      { id, query },
-      {
-        id: { type: 'string', required: true },
-        query: { type: 'object', required: false }
-      },
-    );
+  /**
+   * Retrieve an object by ID
+   *
+   * Preferred usage (new signature):
+   * sdk.objects.byId({ id: 'someId', expandDetails: true })
+   *
+   * Legacy usage (deprecated, but supported):
+   * sdk.objects.byId('someId', { 'select[]': ['field1', 'field2'] })
+   *
+   * @param {string|object} args - Either ID string or options object
+   * @returns {Promise} Object data
+   */
+  async byId(...args) {
+    // New signature: byId({ id, expandDetails })
+    if (
+      args.length === 1 &&
+      typeof args[0] === 'object' &&
+      !Array.isArray(args[0])
+    ) {
+      const { id, expandDetails = false } = args[0];
 
-    const params = {
-      query
-    }
-
-    const result = await this.sdk._fetch(`/object/${id}`, 'GET', params);
-    return result;
-  }
-
-  async query(object, query = {}) {
-    this.sdk.validateParams(
-      { object, query },
-      {
-        object: { type: 'string', required: true },
-        query: { type: 'object', required: false }
-      },
-    );
-
-    const params = {
-      query,
-    }
-
-    const result = await this.sdk._fetch(`/object/query/${object}`, 'GET', params);
-    return result;
-  }
-
-  async updateById(object, id, update) {
-    this.sdk.validateParams(
-      { object, id, update },
-      {
-        object: { type: 'string', required: true },
-        id: { type: 'string', required: true },
-        update: { type: 'object', required: true }
-      },
-    );
-
-    const params = {
-      body: {
-        where: {
-          id,
+      this.sdk.validateParams(
+        { id, expandDetails },
+        {
+          id: { type: 'string', required: true },
+          expandDetails: { type: 'boolean', required: false },
         },
-        update,
-      },
+      );
+
+      const query = {};
+      if (expandDetails) query.expandDetails = expandDetails;
+
+      const params = { query };
+      return await this.sdk._fetch(`/object/${id}`, 'GET', params);
     }
 
-    const result = await this.sdk._fetch(`/object/${object}`, 'PUT', params);
-    return result;
+    // Old signature: byId(id, queryParams)
+    if (args.length >= 1 && typeof args[0] === 'string') {
+      const [id, queryParams = {}] = args;
+
+      this.sdk.validateParams(
+        { id },
+        {
+          id: { type: 'string', required: true },
+        },
+      );
+
+      const query = { ...queryParams };
+      const params = { query };
+      return await this.sdk._fetch(`/object/${id}`, 'GET', params);
+    }
+
+    throw new Error('Invalid arguments for byId method');
   }
 
-  async update(object, where, update) {
+  /**
+   * Query objects with filters
+   *
+   * Preferred usage (new signature):
+   * sdk.objects.query({
+   *   object: 'users',
+   *   select: ['id', 'name'],
+   *   where: { status: 'active' },
+   *   limit: 50,
+   *   expandDetails: true
+   * })
+   *
+   * Legacy usage (deprecated, but supported):
+   * sdk.objects.query('users', { 'select[]': ['id', 'name'], status: 'active' })
+   *
+   * @param {object} args - Query parameters
+   * @returns {Promise} Query results
+   */
+  async query(...args) {
+    // New signature: query({ object, select, where, ... })
+    if (args.length === 1 && typeof args[0] === 'object' && args[0].object) {
+      const {
+        object,
+        select = null,
+        where = {},
+        limit = 100,
+        nextId = null,
+        previousId = null,
+        orderByDirection = 'DESC',
+        expandDetails = false,
+      } = args[0];
+
+      this.sdk.validateParams(
+        {
+          object,
+          select,
+          where,
+          limit,
+          nextId,
+          previousId,
+          orderByDirection,
+          expandDetails,
+        },
+        {
+          object: { type: 'string', required: true },
+          select: { type: 'object', required: false }, // array or string
+          where: { type: 'object', required: false },
+          limit: { type: 'number', required: false },
+          nextId: { type: 'string', required: false },
+          previousId: { type: 'string', required: false },
+          orderByDirection: { type: 'string', required: false },
+          expandDetails: { type: 'boolean', required: false },
+        },
+      );
+
+      const query = { ...where };
+      if (select !== null) query.select = select;
+      if (limit !== 100) query.limit = limit;
+      if (nextId !== null) query.nextId = nextId;
+      if (previousId !== null) query.previousId = previousId;
+      if (orderByDirection !== 'DESC')
+        query.orderByDirection = orderByDirection;
+      if (expandDetails) query.expandDetails = expandDetails;
+
+      const params = { query };
+      return await this.sdk._fetch(`/object/query/${object}`, 'GET', params);
+    }
+
+    // Old signature: query(objectName, queryParams)
+    if (args.length === 2 && typeof args[0] === 'string') {
+      const [objectName, queryParams = {}] = args;
+
+      this.sdk.validateParams(
+        { object: objectName },
+        {
+          object: { type: 'string', required: true },
+        },
+      );
+
+      const params = { query: queryParams };
+      return await this.sdk._fetch(
+        `/object/query/${objectName}`,
+        'GET',
+        params,
+      );
+    }
+
+    throw new Error('Invalid arguments for query method');
+  }
+
+  /**
+   * Update an object record by ID
+   *
+   * Preferred usage (new signature):
+   * sdk.objects.updateById({ object: 'users', id: 'userId', update: { name: 'Jane' } })
+   *
+   * Legacy usage (deprecated, but supported):
+   * sdk.objects.updateById('users', 'userId', { name: 'Jane' })
+   *
+   * @param {object} args - Update parameters
+   * @returns {Promise} Updated object data
+   */
+  async updateById(...args) {
+    // New signature: updateById({ object, id, update })
+    if (args.length === 1 && typeof args[0] === 'object' && args[0].object) {
+      const { object, id, update } = args[0];
+
+      this.sdk.validateParams(
+        { object, id, update },
+        {
+          object: { type: 'string', required: true },
+          id: { type: 'string', required: true },
+          update: { type: 'object', required: true },
+        },
+      );
+
+      const params = {
+        body: {
+          where: { id },
+          update,
+        },
+      };
+
+      return await this.sdk._fetch(`/object/${object}`, 'PUT', params);
+    }
+
+    // Old signature: updateById(object, id, update)
+    if (args.length === 3) {
+      const [object, id, update] = args;
+
+      this.sdk.validateParams(
+        { object, id, update },
+        {
+          object: { type: 'string', required: true },
+          id: { type: 'string', required: true },
+          update: { type: 'object', required: true },
+        },
+      );
+
+      const params = {
+        body: {
+          where: { id },
+          update,
+        },
+      };
+
+      return await this.sdk._fetch(`/object/${object}`, 'PUT', params);
+    }
+
+    throw new Error('Invalid arguments for updateById method');
+  }
+
+  async update({ object, where, update }) {
     this.sdk.validateParams(
       { object, where, update },
       {
         object: { type: 'string', required: true },
         where: { type: 'object', required: true },
-        update: { type: 'object', required: true }
+        update: { type: 'object', required: true },
       },
     );
 
@@ -75,64 +244,95 @@ export class ObjectsService {
         where,
         update,
       },
-    }
+    };
 
     const result = await this.sdk._fetch(`/object/${object}`, 'PUT', params);
     return result;
   }
 
-  async create(object, body = {}) {
-    this.sdk.validateParams(
-      { object, body },
-      {
-        object: { type: 'string', required: true },
-        body: { type: 'object', required: true }
-      },
-    );
+  /**
+   * Create a new object record
+   *
+   * Preferred usage (new signature):
+   * sdk.objects.create({ object: 'users', body: { name: 'John', email: 'john@example.com' } })
+   *
+   * Legacy usage (deprecated, but supported):
+   * sdk.objects.create('users', { name: 'John', email: 'john@example.com' })
+   *
+   * @param {object} args - Creation parameters
+   * @returns {Promise} Created object data
+   */
+  async create(...args) {
+    // New signature: create({ object, body })
+    if (args.length === 1 && typeof args[0] === 'object' && args[0].object) {
+      const { object, body } = args[0];
 
-    const params = {
-      body
+      this.sdk.validateParams(
+        { object, body },
+        {
+          object: { type: 'string', required: true },
+          body: { type: 'object', required: true },
+        },
+      );
+
+      const params = { body };
+      return await this.sdk._fetch(`/object/${object}`, 'POST', params);
     }
 
-    const result = await this.sdk._fetch(`/object/${object}`, 'POST', params);
-    return result;
+    // Old signature: create(object, body)
+    if (args.length === 2) {
+      const [object, body] = args;
+
+      this.sdk.validateParams(
+        { object, body },
+        {
+          object: { type: 'string', required: true },
+          body: { type: 'object', required: true },
+        },
+      );
+
+      const params = { body };
+      return await this.sdk._fetch(`/object/${object}`, 'POST', params);
+    }
+
+    throw new Error('Invalid arguments for create method');
   }
 
-  async delete(object, where) {
+  async delete({ object, where }) {
     this.sdk.validateParams(
       { object, where },
       {
         object: { type: 'string', required: true },
-        where: { type: 'object', required: true }
+        where: { type: 'object', required: true },
       },
     );
 
     const params = {
       body: {
-        where
-      }
-    }
+        where,
+      },
+    };
 
     const result = await this.sdk._fetch(`/object/${object}`, 'DELETE', params);
     return result;
   }
 
-  async deleteById(object, id) {
+  async deleteById({ object, id }) {
     this.sdk.validateParams(
       { object, id },
       {
         object: { type: 'string', required: true },
-        id: { type: 'string', required: true }
+        id: { type: 'string', required: true },
       },
     );
 
     const params = {
       body: {
         where: {
-          id
-        }
-      }
-    }
+          id,
+        },
+      },
+    };
 
     const result = await this.sdk._fetch(`/object/${object}`, 'DELETE', params);
     return result;
@@ -146,18 +346,505 @@ export class ObjectsService {
       },
     );
 
-    const params = {
-    }
+    const params = {};
 
-    const result = await this.sdk._fetch(`/object/describe/${object}`, 'GET', params);
+    const result = await this.sdk._fetch(
+      `/object/describe/${object}`,
+      'GET',
+      params,
+    );
     return result;
   }
 
   async list() {
-    const params = {
-    }
+    const params = {};
 
     const result = await this.sdk._fetch(`/object/`, 'GET', params);
+    return result;
+  }
+
+  // ExpandDetails methods
+  async createExpandDetail({
+    objectName,
+    fieldName,
+    targetObject,
+    lookupColumn,
+    expandFields,
+    keyField = null,
+    isActive = true,
+    isSystem = 0,
+  }) {
+    this.sdk.validateParams(
+      {
+        objectName,
+        fieldName,
+        targetObject,
+        lookupColumn,
+        expandFields,
+        keyField,
+        isActive,
+        isSystem,
+      },
+      {
+        objectName: { type: 'string', required: true },
+        fieldName: { type: 'string', required: true },
+        targetObject: { type: 'string', required: true },
+        lookupColumn: { type: 'string', required: true },
+        expandFields: { type: 'object', required: true }, // array
+        keyField: { type: 'string', required: false },
+        isActive: { type: 'boolean', required: false },
+        isSystem: { type: 'number', required: false },
+      },
+    );
+
+    const body = {
+      objectName,
+      fieldName,
+      targetObject,
+      lookupColumn,
+      expandFields,
+      keyField,
+      isActive,
+      isSystem,
+    };
+    const params = { body };
+
+    const result = await this.sdk._fetch(
+      `/object/expandDetails`,
+      'POST',
+      params,
+    );
+    return result;
+  }
+
+  async getExpandDetails({
+    objectName = null,
+    fieldName = null,
+    targetObject = null,
+    isActive = null,
+    isSystem = null,
+    limit = 100,
+    offset = 0,
+  } = {}) {
+    this.sdk.validateParams(
+      {
+        objectName,
+        fieldName,
+        targetObject,
+        isActive,
+        isSystem,
+        limit,
+        offset,
+      },
+      {
+        objectName: { type: 'string', required: false },
+        fieldName: { type: 'string', required: false },
+        targetObject: { type: 'string', required: false },
+        isActive: { type: 'boolean', required: false },
+        isSystem: { type: 'boolean', required: false },
+        limit: { type: 'number', required: false },
+        offset: { type: 'number', required: false },
+      },
+    );
+
+    const query = {};
+    if (objectName !== null) query.objectName = objectName;
+    if (fieldName !== null) query.fieldName = fieldName;
+    if (targetObject !== null) query.targetObject = targetObject;
+    if (isActive !== null) query.isActive = isActive;
+    if (isSystem !== null) query.isSystem = isSystem;
+    if (limit !== 100) query.limit = limit;
+    if (offset !== 0) query.offset = offset;
+
+    const params = { query };
+
+    const result = await this.sdk._fetch(
+      `/object/expandDetails`,
+      'GET',
+      params,
+    );
+    return result;
+  }
+
+  async getExpandDetailById(id) {
+    this.sdk.validateParams(
+      { id },
+      {
+        id: { type: 'string', required: true },
+      },
+    );
+
+    const result = await this.sdk._fetch(`/object/expandDetails/${id}`, 'GET');
+    return result;
+  }
+
+  async updateExpandDetail({
+    id,
+    objectName = null,
+    fieldName = null,
+    targetObject = null,
+    lookupColumn = null,
+    expandFields = null,
+    keyField = null,
+    isActive = null,
+  }) {
+    this.sdk.validateParams(
+      {
+        id,
+        objectName,
+        fieldName,
+        targetObject,
+        lookupColumn,
+        expandFields,
+        keyField,
+        isActive,
+      },
+      {
+        id: { type: 'string', required: true },
+        objectName: { type: 'string', required: false },
+        fieldName: { type: 'string', required: false },
+        targetObject: { type: 'string', required: false },
+        lookupColumn: { type: 'string', required: false },
+        expandFields: { type: 'object', required: false }, // array
+        keyField: { type: 'string', required: false },
+        isActive: { type: 'boolean', required: false },
+      },
+    );
+
+    const body = {};
+    if (objectName !== null) body.objectName = objectName;
+    if (fieldName !== null) body.fieldName = fieldName;
+    if (targetObject !== null) body.targetObject = targetObject;
+    if (lookupColumn !== null) body.lookupColumn = lookupColumn;
+    if (expandFields !== null) body.expandFields = expandFields;
+    if (keyField !== null) body.keyField = keyField;
+    if (isActive !== null) body.isActive = isActive;
+
+    const params = { body };
+
+    const result = await this.sdk._fetch(
+      `/object/expandDetails/${id}`,
+      'PUT',
+      params,
+    );
+    return result;
+  }
+
+  async deleteExpandDetail(id) {
+    this.sdk.validateParams(
+      { id },
+      {
+        id: { type: 'string', required: true },
+      },
+    );
+
+    const result = await this.sdk._fetch(
+      `/object/expandDetails/${id}`,
+      'DELETE',
+    );
+    return result;
+  }
+
+  // GeneratedColumns methods
+  async createGeneratedColumn({
+    objectName,
+    columnName,
+    value,
+    type = 'string',
+    columnType = 'varchar',
+    length = '255',
+    isActive = true,
+    isSystem = 0,
+  }) {
+    this.sdk.validateParams(
+      {
+        objectName,
+        columnName,
+        value,
+        type,
+        columnType,
+        length,
+        isActive,
+        isSystem,
+      },
+      {
+        objectName: { type: 'string', required: true },
+        columnName: { type: 'string', required: true },
+        value: { type: 'string', required: true },
+        type: { type: 'string', required: false },
+        columnType: { type: 'string', required: false },
+        length: { type: 'string', required: false },
+        isActive: { type: 'boolean', required: false },
+        isSystem: { type: 'number', required: false },
+      },
+    );
+
+    const body = {
+      objectName,
+      columnName,
+      value,
+      type,
+      columnType,
+      length,
+      isActive,
+      isSystem,
+    };
+    const params = { body };
+
+    const result = await this.sdk._fetch(
+      `/object/generatedColumns`,
+      'POST',
+      params,
+    );
+    return result;
+  }
+
+  async getGeneratedColumns({
+    objectName = null,
+    columnName = null,
+    isActive = null,
+    isSystem = null,
+    limit = 100,
+    offset = 0,
+  } = {}) {
+    this.sdk.validateParams(
+      { objectName, columnName, isActive, isSystem, limit, offset },
+      {
+        objectName: { type: 'string', required: false },
+        columnName: { type: 'string', required: false },
+        isActive: { type: 'boolean', required: false },
+        isSystem: { type: 'boolean', required: false },
+        limit: { type: 'number', required: false },
+        offset: { type: 'number', required: false },
+      },
+    );
+
+    const query = {};
+    if (objectName !== null) query.objectName = objectName;
+    if (columnName !== null) query.columnName = columnName;
+    if (isActive !== null) query.isActive = isActive;
+    if (isSystem !== null) query.isSystem = isSystem;
+    if (limit !== 100) query.limit = limit;
+    if (offset !== 0) query.offset = offset;
+
+    const params = { query };
+
+    const result = await this.sdk._fetch(
+      `/object/generatedColumns`,
+      'GET',
+      params,
+    );
+    return result;
+  }
+
+  async getGeneratedColumnById(id) {
+    this.sdk.validateParams(
+      { id },
+      {
+        id: { type: 'string', required: true },
+      },
+    );
+
+    const result = await this.sdk._fetch(
+      `/object/generatedColumns/${id}`,
+      'GET',
+    );
+    return result;
+  }
+
+  async updateGeneratedColumn({
+    id,
+    objectName = null,
+    columnName = null,
+    value = null,
+    type = null,
+    columnType = null,
+    length = null,
+    isActive = null,
+  }) {
+    this.sdk.validateParams(
+      { id, objectName, columnName, value, type, columnType, length, isActive },
+      {
+        id: { type: 'string', required: true },
+        objectName: { type: 'string', required: false },
+        columnName: { type: 'string', required: false },
+        value: { type: 'string', required: false },
+        type: { type: 'string', required: false },
+        columnType: { type: 'string', required: false },
+        length: { type: 'string', required: false },
+        isActive: { type: 'boolean', required: false },
+      },
+    );
+
+    const body = {};
+    if (objectName !== null) body.objectName = objectName;
+    if (columnName !== null) body.columnName = columnName;
+    if (value !== null) body.value = value;
+    if (type !== null) body.type = type;
+    if (columnType !== null) body.columnType = columnType;
+    if (length !== null) body.length = length;
+    if (isActive !== null) body.isActive = isActive;
+
+    const params = { body };
+
+    const result = await this.sdk._fetch(
+      `/object/generatedColumns/${id}`,
+      'PUT',
+      params,
+    );
+    return result;
+  }
+
+  async deleteGeneratedColumn(id) {
+    this.sdk.validateParams(
+      { id },
+      {
+        id: { type: 'string', required: true },
+      },
+    );
+
+    const result = await this.sdk._fetch(
+      `/object/generatedColumns/${id}`,
+      'DELETE',
+    );
+    return result;
+  }
+
+  // Object Management methods
+  async createObject({ name }) {
+    this.sdk.validateParams(
+      { name },
+      {
+        name: { type: 'string', required: true },
+      },
+    );
+
+    const body = { name };
+    const params = { body };
+
+    const result = await this.sdk._fetch(`/object/manage`, 'POST', params);
+    return result;
+  }
+
+  async createColumn({
+    objectName,
+    columns = null,
+    name = null,
+    type = null,
+    length = null,
+    defaultValue = null,
+    isEncrypted = false,
+    isRequired = false,
+  }) {
+    this.sdk.validateParams(
+      {
+        objectName,
+        columns,
+        name,
+        type,
+        length,
+        defaultValue,
+        isEncrypted,
+        isRequired,
+      },
+      {
+        objectName: { type: 'string', required: true },
+        columns: { type: 'object', required: false }, // array
+        name: { type: 'string', required: false },
+        type: { type: 'string', required: false },
+        length: { type: 'number', required: false },
+        defaultValue: { type: 'string', required: false },
+        isEncrypted: { type: 'boolean', required: false },
+        isRequired: { type: 'boolean', required: false },
+      },
+    );
+
+    const body = {};
+    if (columns !== null) {
+      body.columns = columns;
+    } else if (name && type) {
+      body.name = name;
+      body.type = type;
+      if (length !== null) body.length = length;
+      if (defaultValue !== null) body.defaultValue = defaultValue;
+      body.isEncrypted = isEncrypted;
+      body.isRequired = isRequired;
+    } else {
+      throw new Error(
+        'Either columns array or individual column properties (name, type) must be provided',
+      );
+    }
+
+    const params = { body };
+
+    const result = await this.sdk._fetch(
+      `/object/manage/${objectName}`,
+      'POST',
+      params,
+    );
+    return result;
+  }
+
+  async modifyColumn({
+    objectName,
+    columnName,
+    columnType = null,
+    length = null,
+    defaultValue = null,
+    isEncrypted = null,
+    isRequired = null,
+  }) {
+    this.sdk.validateParams(
+      {
+        objectName,
+        columnName,
+        columnType,
+        length,
+        defaultValue,
+        isEncrypted,
+        isRequired,
+      },
+      {
+        objectName: { type: 'string', required: true },
+        columnName: { type: 'string', required: true },
+        columnType: { type: 'string', required: false },
+        length: { type: 'number', required: false },
+        defaultValue: { type: 'string', required: false },
+        isEncrypted: { type: 'boolean', required: false },
+        isRequired: { type: 'boolean', required: false },
+      },
+    );
+
+    const body = {};
+    if (columnType !== null) body.type = columnType;
+    if (length !== null) body.length = length;
+    if (defaultValue !== null) body.defaultValue = defaultValue;
+    if (isEncrypted !== null) body.isEncrypted = isEncrypted;
+    if (isRequired !== null) body.isRequired = isRequired;
+
+    const params = { body };
+
+    const result = await this.sdk._fetch(
+      `/object/manage/${objectName}/${columnName}`,
+      'PUT',
+      params,
+    );
+    return result;
+  }
+
+  async deleteColumn({ objectName, columnName }) {
+    this.sdk.validateParams(
+      { objectName, columnName },
+      {
+        objectName: { type: 'string', required: true },
+        columnName: { type: 'string', required: true },
+      },
+    );
+
+    const result = await this.sdk._fetch(
+      `/object/manage/${objectName}/${columnName}`,
+      'DELETE',
+    );
     return result;
   }
 }

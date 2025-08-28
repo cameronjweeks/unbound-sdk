@@ -12,7 +12,12 @@ console.log('Testing SDK Constructor Patterns...\n');
 // Test 1: Legacy positional parameters (backwards compatibility)
 console.log('✅ Testing legacy positional parameters:');
 try {
-  const legacySDK = new SDK('test-namespace', 'call-123', 'jwt-token', 'request-456');
+  const legacySDK = new SDK(
+    'test-namespace',
+    'call-123',
+    'jwt-token',
+    'request-456',
+  );
   console.log(`  - namespace: ${legacySDK.namespace}`);
   console.log(`  - callId: ${legacySDK.callId}`);
   console.log(`  - token: ${legacySDK.token}`);
@@ -31,7 +36,7 @@ try {
     token: 'jwt-token',
     fwRequestId: 'request-456',
     url: 'api.example.com',
-    socketStore: null
+    socketStore: null,
   });
   console.log(`  - namespace: ${modernSDK.namespace}`);
   console.log(`  - callId: ${modernSDK.callId}`);
@@ -47,7 +52,7 @@ console.log('✅ Testing partial object parameters:');
 try {
   const partialSDK = new SDK({
     namespace: 'test-namespace',
-    token: 'jwt-token'
+    token: 'jwt-token',
     // callId and fwRequestId are optional
   });
   console.log(`  - namespace: ${partialSDK.namespace}`);
@@ -78,7 +83,7 @@ try {
   const { createSDK } = await import('./index.js');
   const factorySDK = createSDK({
     namespace: 'factory-test',
-    token: 'factory-token'
+    token: 'factory-token',
   });
   console.log(`  - namespace: ${factorySDK.namespace}`);
   console.log(`  - token: ${factorySDK.token}`);
@@ -93,14 +98,30 @@ console.log('🎉 All constructor pattern tests completed!');
 console.log('\n✅ Verifying services are available:');
 const testSDK = new SDK({ namespace: 'test' });
 const services = [
-  'login', 'objects', 'messaging', 'video', 'voice', 'ai',
-  'lookup', 'layouts', 'subscriptions', 'workflows', 'notes',
-  'storage', 'verification', 'portals', 'sipEndpoints',
-  'externalOAuth', 'googleCalendar', 'enroll', 'phoneNumbers',
-  'recordTypes', 'generateId'
+  'login',
+  'objects',
+  'messaging',
+  'video',
+  'voice',
+  'ai',
+  'lookup',
+  'layouts',
+  'subscriptions',
+  'workflows',
+  'notes',
+  'storage',
+  'verification',
+  'portals',
+  'sipEndpoints',
+  'externalOAuth',
+  'googleCalendar',
+  'enroll',
+  'phoneNumbers',
+  'recordTypes',
+  'generateId',
 ];
 
-services.forEach(service => {
+services.forEach((service) => {
   if (testSDK[service]) {
     console.log(`  ✅ ${service}`);
   } else {

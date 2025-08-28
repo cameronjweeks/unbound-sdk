@@ -3,13 +3,7 @@ export class NotesService {
     this.sdk = sdk;
   }
 
-  async list({
-    relatedId,
-    recordTypeId,
-    limit,
-    orderBy,
-    orderDirection,
-  }) {
+  async list({ relatedId, recordTypeId, limit, orderBy, orderDirection }) {
     this.sdk.validateParams(
       { relatedId, limit, orderBy, orderDirection },
       {

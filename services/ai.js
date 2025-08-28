@@ -11,7 +11,16 @@ export class GenerativeService {
     this.sdk = sdk;
   }
 
-  async chat({ prompt, messages, relatedId, model, temperature, subscriptionId, stream, method }) {
+  async chat({
+    prompt,
+    messages,
+    relatedId,
+    model,
+    temperature,
+    subscriptionId,
+    stream,
+    method,
+  }) {
     this.sdk.validateParams(
       { method },
       {
@@ -22,7 +31,7 @@ export class GenerativeService {
         temperature: { type: 'number', required: false },
         subscriptionId: { type: 'string', required: false },
         stream: { type: 'boolean', required: false },
-        method: { type: 'string', required: true }
+        method: { type: 'string', required: true },
       },
     );
 
@@ -36,14 +45,24 @@ export class GenerativeService {
         subscriptionId,
         stream,
         method,
-      }
-    }
+      },
+    };
 
     const result = await this.sdk._fetch('/ai/generative/chat', 'POST', params);
     return result;
   }
 
-  async playbook({ prompt, messages, relatedId, model, temperature, subscriptionId, stream, playbookId, sessionId }) {
+  async playbook({
+    prompt,
+    messages,
+    relatedId,
+    model,
+    temperature,
+    subscriptionId,
+    stream,
+    playbookId,
+    sessionId,
+  }) {
     this.sdk.validateParams(
       { playbookId },
       {
@@ -55,7 +74,7 @@ export class GenerativeService {
         subscriptionId: { type: 'string', required: false },
         stream: { type: 'boolean', required: false },
         playbookId: { type: 'string', required: true },
-        sessionId: { type: 'string', required: false }
+        sessionId: { type: 'string', required: false },
       },
     );
 
@@ -70,14 +89,27 @@ export class GenerativeService {
         stream,
         playbookId,
         sessionId,
-      }
-    }
+      },
+    };
 
-    const result = await this.sdk._fetch('/ai/generative/playbook', 'POST', params);
+    const result = await this.sdk._fetch(
+      '/ai/generative/playbook',
+      'POST',
+      params,
+    );
     return result;
   }
 
-  async chatOllama({ prompt, messages, relatedId, model, temperature, subscriptionId, stream, method }) {
+  async chatOllama({
+    prompt,
+    messages,
+    relatedId,
+    model,
+    temperature,
+    subscriptionId,
+    stream,
+    method,
+  }) {
     this.sdk.validateParams(
       { method },
       {
@@ -88,7 +120,7 @@ export class GenerativeService {
         temperature: { type: 'number', required: false },
         subscriptionId: { type: 'string', required: false },
         stream: { type: 'boolean', required: false },
-        method: { type: 'string', required: true }
+        method: { type: 'string', required: true },
       },
     );
 
@@ -102,10 +134,14 @@ export class GenerativeService {
         subscriptionId,
         stream,
         method,
-      }
-    }
+      },
+    };
 
-    const result = await this.sdk._fetch('/ai/generative/ollama', 'POST', params);
+    const result = await this.sdk._fetch(
+      '/ai/generative/ollama',
+      'POST',
+      params,
+    );
     return result;
   }
 }
@@ -115,7 +151,17 @@ export class TextToSpeechService {
     this.sdk = sdk;
   }
 
-  async create({ text, voice, languageCode, ssmlGender, audioEncoding, speakingRate, pitch, volumeGainDb, effectsProfileIds }) {
+  async create({
+    text,
+    voice,
+    languageCode,
+    ssmlGender,
+    audioEncoding,
+    speakingRate,
+    pitch,
+    volumeGainDb,
+    effectsProfileIds,
+  }) {
     this.sdk.validateParams(
       { text },
       {

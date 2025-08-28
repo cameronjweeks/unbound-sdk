@@ -21,7 +21,11 @@ export class GoogleCalendarService {
       body: webhookData,
     };
 
-    const result = await this.sdk._fetch('/googleCalendar/webhook', 'POST', params);
+    const result = await this.sdk._fetch(
+      '/googleCalendar/webhook',
+      'POST',
+      params,
+    );
     return result;
   }
 
@@ -33,7 +37,10 @@ export class GoogleCalendarService {
       },
     );
 
-    const result = await this.sdk._fetch(`/googleCalendar/webhook/${webhookId}`, 'DELETE');
+    const result = await this.sdk._fetch(
+      `/googleCalendar/webhook/${webhookId}`,
+      'DELETE',
+    );
     return result;
   }
 
@@ -59,7 +66,8 @@ export class GoogleCalendarService {
     const validationSchema = {};
     if ('timeMin' in options) validationSchema.timeMin = { type: 'string' };
     if ('timeMax' in options) validationSchema.timeMax = { type: 'string' };
-    if ('maxResults' in options) validationSchema.maxResults = { type: 'number' };
+    if ('maxResults' in options)
+      validationSchema.maxResults = { type: 'number' };
     if ('orderBy' in options) validationSchema.orderBy = { type: 'string' };
 
     if (Object.keys(validationSchema).length > 0) {
@@ -70,7 +78,11 @@ export class GoogleCalendarService {
       query: { calendarId, ...options },
     };
 
-    const result = await this.sdk._fetch('/googleCalendar/events', 'GET', params);
+    const result = await this.sdk._fetch(
+      '/googleCalendar/events',
+      'GET',
+      params,
+    );
     return result;
   }
 
@@ -86,7 +98,11 @@ export class GoogleCalendarService {
       body: changeData,
     };
 
-    const result = await this.sdk._fetch('/googleCalendar/processChange', 'POST', params);
+    const result = await this.sdk._fetch(
+      '/googleCalendar/processChange',
+      'POST',
+      params,
+    );
     return result;
   }
 }

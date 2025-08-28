@@ -75,7 +75,11 @@ export class SipEndpointsService {
       body: updateData,
     };
 
-    const result = await this.sdk._fetch(`/sipEndpoints/${endpointId}`, 'PUT', params);
+    const result = await this.sdk._fetch(
+      `/sipEndpoints/${endpointId}`,
+      'PUT',
+      params,
+    );
     return result;
   }
 
@@ -87,7 +91,10 @@ export class SipEndpointsService {
       },
     );
 
-    const result = await this.sdk._fetch(`/sipEndpoints/${endpointId}`, 'DELETE');
+    const result = await this.sdk._fetch(
+      `/sipEndpoints/${endpointId}`,
+      'DELETE',
+    );
     return result;
   }
 }

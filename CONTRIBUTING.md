@@ -5,17 +5,20 @@ Thank you for your interest in contributing to the Unbound SDK!
 ## Development Setup
 
 1. Clone the repository:
+
 ```bash
 git clone https://github.com/cameronjweeks/unbound-sdk.git
 cd unbound-sdk
 ```
 
 2. Install dependencies:
+
 ```bash
 npm install
 ```
 
 3. Run tests:
+
 ```bash
 npm test
 ```
@@ -23,7 +26,7 @@ npm test
 ## Project Structure
 
 - `index.js` - Main SDK entry point
-- `base.js` - Base SDK class with transport system  
+- `base.js` - Base SDK class with transport system
 - `services/` - Individual service modules (21 services)
 - `internal-sdk/` - Internal SDK extension
 - `README.md` - Public documentation
@@ -41,6 +44,7 @@ npm test
 ## Service Development
 
 When adding or modifying services:
+
 - Follow existing patterns in `services/` directory
 - Add parameter validation using `this.sdk.validateParams()`
 - Include JSDoc comments for all public methods

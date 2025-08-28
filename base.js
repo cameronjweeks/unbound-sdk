@@ -3,7 +3,7 @@
 
 /*
  * Base SDK Class with Transport Plugin System
- * 
+ *
  * Optional Dependencies:
  * - mime-types: For accurate MIME type detection (automatically imported if available)
  *
@@ -30,14 +30,15 @@ export class BaseSDK {
       this.token = token;
       this.fwRequestId = fwRequestId;
     }
-    
+
     this.transports = new Map();
+    this.debugMode = false;
     this._initializeEnvironment();
   }
 
   _initializeEnvironment() {
     const defaultDomain = 'api.unbound.cx';
-    
+
     if (typeof window === 'undefined') {
       // Server-side (Node.js)
       this.environment = 'node';
@@ -47,7 +48,8 @@ export class BaseSDK {
     } else {
       // Client-side (browser)
       this.environment = 'browser';
-      this.baseUrl = this.baseUrl || process?.env?.API_BASE_URL || defaultDomain;
+      this.baseUrl =
+        this.baseUrl || process?.env?.API_BASE_URL || defaultDomain;
       if (this.baseUrl && !this.baseUrl.startsWith('api.')) {
         this.baseUrl = `api.${this.baseUrl}`;
       }
@@ -62,7 +64,7 @@ export class BaseSDK {
   setNamespace(namespace) {
     this.namespace = namespace;
     const defaultDomain = 'api.unbound.cx';
-    
+
     if (this.environment === 'node') {
       this.baseURL = `https://${this.namespace ? this.namespace : 'login'}.${
         process.env?.API_BASE_URL || defaultDomain
@@ -72,17 +74,27 @@ export class BaseSDK {
     }
   }
 
+  debug(enabled = true) {
+    this.debugMode = enabled;
+    return this;
+  }
+
   addTransport(transport) {
     if (!transport || typeof transport.request !== 'function') {
       throw new Error('Transport must have a request method');
     }
-    
+
+    // Transport plugins must follow these rules:
+    // 1. RETURN API responses normally (including error status codes like 400, 500)
+    // 2. ONLY THROW exceptions for transport mechanism failures (connection issues, plugin errors)
+    // This ensures API errors flow through unchanged, same as built-in fetch
+
     const priority = transport.getPriority ? transport.getPriority() : 50;
     const name = transport.name || `transport_${Date.now()}`;
-    
+
     this.transports.set(name, {
       transport,
-      priority
+      priority,
     });
   }
 
@@ -96,16 +108,20 @@ export class BaseSDK {
     }
 
     // Sort transports by priority (lower number = higher priority)
-    const sortedTransports = Array.from(this.transports.values())
-      .sort((a, b) => a.priority - b.priority);
+    const sortedTransports = Array.from(this.transports.values()).sort(
+      (a, b) => a.priority - b.priority,
+    );
 
     for (const { transport } of sortedTransports) {
       try {
-        if (transport.isAvailable && await transport.isAvailable()) {
+        if (transport.isAvailable && (await transport.isAvailable())) {
           return transport;
         }
       } catch (err) {
-        console.debug(`Transport ${transport.name} not available:`, err.message);
+        console.debug(
+          `Transport ${transport.name} not available:`,
+          err.message,
+        );
         continue;
       }
     }
@@ -119,7 +135,7 @@ export class BaseSDK {
         throw new Error(`Missing required parameter ${key}`);
       }
 
-      if (params[key] !== undefined) {
+      if (params[key] !== undefined && params[key] !== null) {
         const expectedType = schema[key].type;
         const actualValue = params[key];
         let isValidType = false;
@@ -167,10 +183,32 @@ export class BaseSDK {
           fwRequestId: this.fwRequestId,
           baseURL: this.baseURL || this.fullUrl,
         });
+        
+        // Debug logging for transport plugins
+        if (this.debugMode) {
+          const status = result?.status || 200;
+          console.log(`API :: ${transport.name} :: ${method.toUpperCase()} :: ${endpoint} :: ${status}`);
+        }
+        
         return result;
       } catch (err) {
-        console.warn(`Transport ${transport.name} failed, falling back to HTTP:`, err.message);
-        // Fall through to HTTP
+        // IMPORTANT: This catch block should ONLY handle transport-level failures
+        // (e.g., WebSocket disconnected, plugin unavailable, network errors)
+        // 
+        // Transport plugins should:
+        // - RETURN API error responses normally (400, 500, etc.) as response objects
+        // - ONLY THROW for transport mechanism failures
+        //
+        // This ensures API errors are passed through unchanged, just like built-in fetch
+        
+        if (this.debugMode) {
+          console.log(`API :: Transport ${transport.name} failure :: ${method.toUpperCase()} :: ${endpoint} :: ${err.message}`);
+        }
+        console.warn(
+          `Transport ${transport.name} mechanism failed, falling back to HTTP:`,
+          err.message,
+        );
+        // Fall through to built-in HTTP fetch
       }
     }
 
@@ -178,14 +216,41 @@ export class BaseSDK {
     return this._httpRequest(endpoint, method, params);
   }
 
+  _isMultipartBody(body) {
+    // Check if body is FormData or multipart content
+    if (!body) return false;
+    
+    // Browser FormData
+    if (typeof FormData !== 'undefined' && body instanceof FormData) {
+      return true;
+    }
+    
+    // Node.js Buffer (our manual multipart construction)
+    if (typeof Buffer !== 'undefined' && Buffer.isBuffer(body)) {
+      return true;
+    }
+    
+    // Uint8Array (fallback multipart construction)
+    if (body instanceof Uint8Array) {
+      return true;
+    }
+    
+    // String-based multipart (check for multipart boundaries)
+    if (typeof body === 'string' && body.includes('Content-Disposition: form-data')) {
+      return true;
+    }
+    
+    return false;
+  }
+
   async _httpRequest(endpoint, method, params = {}) {
     const { body, query, headers = {} } = params;
-    
+
     const options = {
       method,
       headers: {
-        // Only set Content-Type if not already provided (check both cases)
-        ...(headers?.['Content-Type'] || headers?.['content-type']
+        // Smart content-type detection based on actual body content
+        ...(this._isMultipartBody(body) || headers?.['Content-Type'] || headers?.['content-type']
           ? {}
           : { 'Content-Type': 'application/json' }),
         ...headers,
@@ -230,7 +295,7 @@ export class BaseSDK {
         body &&
         (body.constructor.name === 'FormData' ||
           typeof body.getBoundary === 'function');
-      const isBuffer = Buffer && Buffer.isBuffer && Buffer.isBuffer(body);
+      const isBuffer = (typeof Buffer !== 'undefined') && Buffer.isBuffer && Buffer.isBuffer(body);
 
       if (isFormData || isBuffer) {
         options.body = body;
@@ -240,7 +305,46 @@ export class BaseSDK {
     }
 
     const response = await fetch(url, options);
-    const bodyResponse = await response.json();
+    
+    // Check if the response indicates an HTTP error
+    // These are API/configuration errors, not transport failures
+    if (!response.ok) {
+      let errorBody;
+      const contentType = response.headers.get('content-type') || '';
+      
+      try {
+        if (contentType.includes('application/json')) {
+          errorBody = await response.json();
+        } else {
+          errorBody = await response.text();
+        }
+      } catch (parseError) {
+        errorBody = `HTTP ${response.status} ${response.statusText}`;
+      }
+      
+      // Create a structured error for API/HTTP failures
+      const httpError = new Error(`API :: Error :: https :: ${options.method} :: ${endpoint} :: ${response.status} :: ${response.statusText}`);
+      httpError.status = response.status;
+      httpError.statusText = response.statusText;
+      httpError.method = options.method;
+      httpError.endpoint = endpoint;
+      httpError.body = errorBody;
+      
+      throw httpError;
+    }
+    
+    // Check content type to determine how to parse successful response
+    const contentType = response.headers.get('content-type') || '';
+    let bodyResponse;
+    
+    if (contentType.includes('application/json')) {
+      bodyResponse = await response.json();
+    } else if (contentType.includes('text/')) {
+      bodyResponse = await response.text();
+    } else {
+      // For binary content (PDFs, images, etc), return as ArrayBuffer
+      bodyResponse = await response.arrayBuffer();
+    }
 
     const responseHeaders = response.headers;
     const responseRequestId =
@@ -248,6 +352,11 @@ export class BaseSDK {
       responseHeaders?.['x-request-id'];
 
     if (!response.ok) {
+      // Debug logging for HTTP errors
+      if (this.debugMode) {
+        console.log(`API :: https :: ${method.toUpperCase()} :: ${endpoint} :: ${response?.status}`);
+      }
+      
       throw {
         name: `API :: Error :: https :: ${method} :: ${endpoint} :: ${responseRequestId} :: ${response?.status} :: ${response?.statusText}`,
         message: bodyResponse?.message || `API Error occured.`,
@@ -257,10 +366,12 @@ export class BaseSDK {
         statusText: response?.statusText,
       };
     }
+
+    // Debug logging for successful HTTP requests
+    if (this.debugMode) {
+      console.log(`API :: https :: ${method.toUpperCase()} :: ${endpoint} :: ${response?.status}`);
+    }
     
-    console.log(
-      `API :: https :: ${method} :: ${endpoint} :: ${responseRequestId}`,
-    );
     return bodyResponse;
   }
 }

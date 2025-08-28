@@ -15,11 +15,11 @@ export class LayoutsService {
 
     const params = {
       query,
-    }
+    };
 
     let uri = `/layouts/${objectName}`;
     if (id) {
-      uri = `${uri}/${id}`
+      uri = `${uri}/${id}`;
     }
 
     const result = await this.sdk._fetch(uri, 'GET', params);
@@ -36,7 +36,7 @@ export class LayoutsService {
 
     const params = {
       body: layout,
-    }
+    };
 
     const result = await this.sdk._fetch('/layouts/', 'POST', params);
     return result;
@@ -53,7 +53,7 @@ export class LayoutsService {
 
     const params = {
       body: layout,
-    }
+    };
 
     const result = await this.sdk._fetch(`/layouts/${id}`, 'PUT', params);
     return result;
@@ -67,7 +67,7 @@ export class LayoutsService {
       },
     );
 
-    const params = {}
+    const params = {};
 
     const result = await this.sdk._fetch(`/layouts/${id}`, 'DELETE', params);
     return result;
@@ -83,9 +83,13 @@ export class LayoutsService {
 
     const params = {
       query,
-    }
+    };
 
-    const result = await this.sdk._fetch('/layouts/dynamic-select-search', 'GET', params);
+    const result = await this.sdk._fetch(
+      '/layouts/dynamic-select-search',
+      'GET',
+      params,
+    );
     return result;
   }
 }

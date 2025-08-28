@@ -3,7 +3,36 @@ export class VoiceService {
     this.sdk = sdk;
   }
 
-  async createCall({ to, from, connectionId, callerId, timeout, machineDetection, machineDetectionTimeout, recordingChannels, record, recordingFormat, recordingTrack, recordingMaxLength, transcribe, transcribeLanguage, webhookUrl, commandId, clientState, customHeaders, sipAuthUsername, sipAuthPassword, sipTransport, sipHeaders, ringTimeout, answeringMachineDetection, detectWordOrPhrase, billingGroupId, answerUrl, answerMethod }) {
+  async createCall({
+    to,
+    from,
+    connectionId,
+    callerId,
+    timeout,
+    machineDetection,
+    machineDetectionTimeout,
+    recordingChannels,
+    record,
+    recordingFormat,
+    recordingTrack,
+    recordingMaxLength,
+    transcribe,
+    transcribeLanguage,
+    webhookUrl,
+    commandId,
+    clientState,
+    customHeaders,
+    sipAuthUsername,
+    sipAuthPassword,
+    sipTransport,
+    sipHeaders,
+    ringTimeout,
+    answeringMachineDetection,
+    detectWordOrPhrase,
+    billingGroupId,
+    answerUrl,
+    answerMethod,
+  }) {
     this.sdk.validateParams(
       { to },
       {
@@ -43,8 +72,10 @@ export class VoiceService {
     if (connectionId) callData.connectionId = connectionId;
     if (callerId) callData.callerId = callerId;
     if (timeout) callData.timeout = timeout;
-    if (machineDetection !== undefined) callData.machineDetection = machineDetection;
-    if (machineDetectionTimeout) callData.machineDetectionTimeout = machineDetectionTimeout;
+    if (machineDetection !== undefined)
+      callData.machineDetection = machineDetection;
+    if (machineDetectionTimeout)
+      callData.machineDetectionTimeout = machineDetectionTimeout;
     if (recordingChannels) callData.recordingChannels = recordingChannels;
     if (record !== undefined) callData.record = record;
     if (recordingFormat) callData.recordingFormat = recordingFormat;
@@ -61,7 +92,8 @@ export class VoiceService {
     if (sipTransport) callData.sipTransport = sipTransport;
     if (sipHeaders) callData.sipHeaders = sipHeaders;
     if (ringTimeout) callData.ringTimeout = ringTimeout;
-    if (answeringMachineDetection) callData.answeringMachineDetection = answeringMachineDetection;
+    if (answeringMachineDetection)
+      callData.answeringMachineDetection = answeringMachineDetection;
     if (detectWordOrPhrase) callData.detectWordOrPhrase = detectWordOrPhrase;
     if (billingGroupId) callData.billingGroupId = billingGroupId;
     if (answerUrl) callData.answerUrl = answerUrl;
@@ -93,7 +125,11 @@ export class VoiceService {
       body: hangupData,
     };
 
-    const result = await this.sdk._fetch(`/voice/calls/${callControlId}/actions/hangup`, 'POST', params);
+    const result = await this.sdk._fetch(
+      `/voice/calls/${callControlId}/actions/hangup`,
+      'POST',
+      params,
+    );
     return result;
   }
 
@@ -117,7 +153,11 @@ export class VoiceService {
       body: holdData,
     };
 
-    const result = await this.sdk._fetch(`/voice/calls/${callControlId}/actions/hold`, 'POST', params);
+    const result = await this.sdk._fetch(
+      `/voice/calls/${callControlId}/actions/hold`,
+      'POST',
+      params,
+    );
     return result;
   }
 
@@ -139,7 +179,11 @@ export class VoiceService {
       body: unholdData,
     };
 
-    const result = await this.sdk._fetch(`/voice/calls/${callControlId}/actions/unhold`, 'POST', params);
+    const result = await this.sdk._fetch(
+      `/voice/calls/${callControlId}/actions/unhold`,
+      'POST',
+      params,
+    );
     return result;
   }
 
@@ -161,7 +205,11 @@ export class VoiceService {
       body: muteData,
     };
 
-    const result = await this.sdk._fetch(`/voice/calls/${callControlId}/actions/mute`, 'POST', params);
+    const result = await this.sdk._fetch(
+      `/voice/calls/${callControlId}/actions/mute`,
+      'POST',
+      params,
+    );
     return result;
   }
 
@@ -183,7 +231,11 @@ export class VoiceService {
       body: unmuteData,
     };
 
-    const result = await this.sdk._fetch(`/voice/calls/${callControlId}/actions/unmute`, 'POST', params);
+    const result = await this.sdk._fetch(
+      `/voice/calls/${callControlId}/actions/unmute`,
+      'POST',
+      params,
+    );
     return result;
   }
 
@@ -206,11 +258,25 @@ export class VoiceService {
       body: dtmfData,
     };
 
-    const result = await this.sdk._fetch(`/voice/calls/${callControlId}/actions/send_dtmf`, 'POST', params);
+    const result = await this.sdk._fetch(
+      `/voice/calls/${callControlId}/actions/send_dtmf`,
+      'POST',
+      params,
+    );
     return result;
   }
 
-  async record(callControlId, recordingChannels, recordingFormat, recordingMaxLength, recordingTerminators, recordingBeep, recordingPlayBeep, clientState, commandId) {
+  async record(
+    callControlId,
+    recordingChannels,
+    recordingFormat,
+    recordingMaxLength,
+    recordingTerminators,
+    recordingBeep,
+    recordingPlayBeep,
+    clientState,
+    commandId,
+  ) {
     this.sdk.validateParams(
       { callControlId },
       {
@@ -230,9 +296,11 @@ export class VoiceService {
     if (recordingChannels) recordData.recordingChannels = recordingChannels;
     if (recordingFormat) recordData.recordingFormat = recordingFormat;
     if (recordingMaxLength) recordData.recordingMaxLength = recordingMaxLength;
-    if (recordingTerminators) recordData.recordingTerminators = recordingTerminators;
+    if (recordingTerminators)
+      recordData.recordingTerminators = recordingTerminators;
     if (recordingBeep !== undefined) recordData.recordingBeep = recordingBeep;
-    if (recordingPlayBeep !== undefined) recordData.recordingPlayBeep = recordingPlayBeep;
+    if (recordingPlayBeep !== undefined)
+      recordData.recordingPlayBeep = recordingPlayBeep;
     if (clientState) recordData.clientState = clientState;
     if (commandId) recordData.commandId = commandId;
 
@@ -240,7 +308,11 @@ export class VoiceService {
       body: recordData,
     };
 
-    const result = await this.sdk._fetch(`/voice/calls/${callControlId}/actions/record_start`, 'POST', params);
+    const result = await this.sdk._fetch(
+      `/voice/calls/${callControlId}/actions/record_start`,
+      'POST',
+      params,
+    );
     return result;
   }
 
@@ -262,11 +334,22 @@ export class VoiceService {
       body: stopData,
     };
 
-    const result = await this.sdk._fetch(`/voice/calls/${callControlId}/actions/record_stop`, 'POST', params);
+    const result = await this.sdk._fetch(
+      `/voice/calls/${callControlId}/actions/record_stop`,
+      'POST',
+      params,
+    );
     return result;
   }
 
-  async transcribe(callControlId, transcriptionEngine, transcriptionLanguage, transcriptionFormat, clientState, commandId) {
+  async transcribe(
+    callControlId,
+    transcriptionEngine,
+    transcriptionLanguage,
+    transcriptionFormat,
+    clientState,
+    commandId,
+  ) {
     this.sdk.validateParams(
       { callControlId },
       {
@@ -280,9 +363,12 @@ export class VoiceService {
     );
 
     const transcribeData = {};
-    if (transcriptionEngine) transcribeData.transcriptionEngine = transcriptionEngine;
-    if (transcriptionLanguage) transcribeData.transcriptionLanguage = transcriptionLanguage;
-    if (transcriptionFormat) transcribeData.transcriptionFormat = transcriptionFormat;
+    if (transcriptionEngine)
+      transcribeData.transcriptionEngine = transcriptionEngine;
+    if (transcriptionLanguage)
+      transcribeData.transcriptionLanguage = transcriptionLanguage;
+    if (transcriptionFormat)
+      transcribeData.transcriptionFormat = transcriptionFormat;
     if (clientState) transcribeData.clientState = clientState;
     if (commandId) transcribeData.commandId = commandId;
 
@@ -290,7 +376,11 @@ export class VoiceService {
       body: transcribeData,
     };
 
-    const result = await this.sdk._fetch(`/voice/calls/${callControlId}/actions/transcription_start`, 'POST', params);
+    const result = await this.sdk._fetch(
+      `/voice/calls/${callControlId}/actions/transcription_start`,
+      'POST',
+      params,
+    );
     return result;
   }
 
@@ -312,11 +402,23 @@ export class VoiceService {
       body: stopData,
     };
 
-    const result = await this.sdk._fetch(`/voice/calls/${callControlId}/actions/transcription_stop`, 'POST', params);
+    const result = await this.sdk._fetch(
+      `/voice/calls/${callControlId}/actions/transcription_stop`,
+      'POST',
+      params,
+    );
     return result;
   }
 
-  async transfer(callControlId, to, from, answerUrl, answerMethod, clientState, commandId) {
+  async transfer(
+    callControlId,
+    to,
+    from,
+    answerUrl,
+    answerMethod,
+    clientState,
+    commandId,
+  ) {
     this.sdk.validateParams(
       { callControlId, to },
       {
@@ -341,11 +443,24 @@ export class VoiceService {
       body: transferData,
     };
 
-    const result = await this.sdk._fetch(`/voice/calls/${callControlId}/actions/transfer`, 'POST', params);
+    const result = await this.sdk._fetch(
+      `/voice/calls/${callControlId}/actions/transfer`,
+      'POST',
+      params,
+    );
     return result;
   }
 
-  async createConference({ name, recordingChannels, recordingFormat, recordingMaxLength, recordingTerminators, webhookUrl, commandId, clientState }) {
+  async createConference({
+    name,
+    recordingChannels,
+    recordingFormat,
+    recordingMaxLength,
+    recordingTerminators,
+    webhookUrl,
+    commandId,
+    clientState,
+  }) {
     this.sdk.validateParams(
       { name },
       {
@@ -363,8 +478,10 @@ export class VoiceService {
     const conferenceData = { name };
     if (recordingChannels) conferenceData.recordingChannels = recordingChannels;
     if (recordingFormat) conferenceData.recordingFormat = recordingFormat;
-    if (recordingMaxLength) conferenceData.recordingMaxLength = recordingMaxLength;
-    if (recordingTerminators) conferenceData.recordingTerminators = recordingTerminators;
+    if (recordingMaxLength)
+      conferenceData.recordingMaxLength = recordingMaxLength;
+    if (recordingTerminators)
+      conferenceData.recordingTerminators = recordingTerminators;
     if (webhookUrl) conferenceData.webhookUrl = webhookUrl;
     if (commandId) conferenceData.commandId = commandId;
     if (clientState) conferenceData.clientState = clientState;
@@ -377,7 +494,17 @@ export class VoiceService {
     return result;
   }
 
-  async joinConference(callControlId, conferenceId, startConferenceOnEnter, endConferenceOnExit, muted, hold, holdAudioUrl, clientState, commandId) {
+  async joinConference(
+    callControlId,
+    conferenceId,
+    startConferenceOnEnter,
+    endConferenceOnExit,
+    muted,
+    hold,
+    holdAudioUrl,
+    clientState,
+    commandId,
+  ) {
     this.sdk.validateParams(
       { callControlId, conferenceId },
       {
@@ -394,8 +521,10 @@ export class VoiceService {
     );
 
     const joinData = { conferenceId };
-    if (startConferenceOnEnter !== undefined) joinData.startConferenceOnEnter = startConferenceOnEnter;
-    if (endConferenceOnExit !== undefined) joinData.endConferenceOnExit = endConferenceOnExit;
+    if (startConferenceOnEnter !== undefined)
+      joinData.startConferenceOnEnter = startConferenceOnEnter;
+    if (endConferenceOnExit !== undefined)
+      joinData.endConferenceOnExit = endConferenceOnExit;
     if (muted !== undefined) joinData.muted = muted;
     if (hold !== undefined) joinData.hold = hold;
     if (holdAudioUrl) joinData.holdAudioUrl = holdAudioUrl;
@@ -406,7 +535,11 @@ export class VoiceService {
       body: joinData,
     };
 
-    const result = await this.sdk._fetch(`/voice/calls/${callControlId}/actions/conference_join`, 'POST', params);
+    const result = await this.sdk._fetch(
+      `/voice/calls/${callControlId}/actions/conference_join`,
+      'POST',
+      params,
+    );
     return result;
   }
 
@@ -428,7 +561,11 @@ export class VoiceService {
       body: leaveData,
     };
 
-    const result = await this.sdk._fetch(`/voice/calls/${callControlId}/actions/conference_leave`, 'POST', params);
+    const result = await this.sdk._fetch(
+      `/voice/calls/${callControlId}/actions/conference_leave`,
+      'POST',
+      params,
+    );
     return result;
   }
 }

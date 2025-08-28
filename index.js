@@ -35,35 +35,36 @@ class UnboundSDK extends BaseSDK {
       const fwRequestId = arguments[3];
       const url = arguments[4];
       const socketStore = arguments[5];
-      
+
       super({ namespace, callId, token, fwRequestId });
-      
+
       // Handle client-side specific parameters
       if (url) {
         this.baseUrl = url;
         this._initializeEnvironment();
       }
-      
+
       if (socketStore) {
         this.socketStore = socketStore;
       }
     } else {
       // New object-based parameters
-      const { namespace, callId, token, fwRequestId, url, socketStore } = options;
-      
+      const { namespace, callId, token, fwRequestId, url, socketStore } =
+        options;
+
       super({ namespace, callId, token, fwRequestId });
-      
+
       // Handle client-side specific parameters
       if (url) {
         this.baseUrl = url;
         this._initializeEnvironment();
       }
-      
+
       if (socketStore) {
         this.socketStore = socketStore;
       }
     }
-    
+
     // Initialize all service modules
     this.login = new LoginService(this);
     this.objects = new ObjectsService(this);
@@ -86,7 +87,7 @@ class UnboundSDK extends BaseSDK {
     this.phoneNumbers = new PhoneNumbersService(this);
     this.recordTypes = new RecordTypesService(this);
     this.generateId = new GenerateIdService(this);
-    
+
     // Add additional services that might be missing
     this._initializeAdditionalServices();
   }
@@ -112,10 +113,13 @@ class UnboundSDK extends BaseSDK {
     if (typeof extension === 'function') {
       // Extension is a class constructor
       const instance = new extension(this);
-      
+
       // Merge extension methods/properties into this SDK
       for (const key in instance) {
-        if (instance.hasOwnProperty(key) && typeof instance[key] !== 'undefined') {
+        if (
+          instance.hasOwnProperty(key) &&
+          typeof instance[key] !== 'undefined'
+        ) {
           this[key] = instance[key];
         }
       }
@@ -143,7 +147,9 @@ class UnboundSDK extends BaseSDK {
   async buildMasterAuth({ namespace, accountId, userId }) {
     // This method should only be available in Node.js environment
     // and will be added via internal SDK extension
-    throw new Error('buildMasterAuth is only available with the internal SDK extension. Please use: sdk.use(InternalExtension)');
+    throw new Error(
+      'buildMasterAuth is only available with the internal SDK extension. Please use: sdk.use(InternalExtension)',
+    );
   }
 }
 
@@ -175,7 +181,13 @@ export { SipEndpointsService } from './services/sipEndpoints.js';
 export { ExternalOAuthService } from './services/externalOAuth.js';
 export { GoogleCalendarService } from './services/googleCalendar.js';
 export { EnrollService } from './services/enroll.js';
-export { PhoneNumbersService, PhoneNumberCarrierService } from './services/phoneNumbers.js';
-export { RecordTypesService, UserRecordTypeDefaultsService } from './services/recordTypes.js';
+export {
+  PhoneNumbersService,
+  PhoneNumberCarrierService,
+} from './services/phoneNumbers.js';
+export {
+  RecordTypesService,
+  UserRecordTypeDefaultsService,
+} from './services/recordTypes.js';
 export { GenerateIdService } from './services/generateId.js';
 export { BaseSDK } from './base.js';

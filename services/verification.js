@@ -40,7 +40,11 @@ export class VerificationService {
       body: { phoneNumber, code },
     };
 
-    const result = await this.sdk._fetch('/verification/sms/validate', 'POST', params);
+    const result = await this.sdk._fetch(
+      '/verification/sms/validate',
+      'POST',
+      params,
+    );
     return result;
   }
 
@@ -81,7 +85,11 @@ export class VerificationService {
       body: { email, code },
     };
 
-    const result = await this.sdk._fetch('/verification/email/validate', 'POST', params);
+    const result = await this.sdk._fetch(
+      '/verification/email/validate',
+      'POST',
+      params,
+    );
     return result;
   }
 }

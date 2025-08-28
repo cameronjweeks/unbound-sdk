@@ -1,6 +1,6 @@
 {
   "name": "@unboundcx/sdk",
-  "version": "1.0.2",
+  "version": "2.6.16",
   "description": "Official JavaScript SDK for the Unbound API - A comprehensive toolkit for integrating with Unbound's communication, AI, and data management services",
   "main": "index.js",
   "type": "module",
@@ -30,7 +30,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/unbound/sdk-js.git"
+    "url": "git+https://github.com/unbound/sdk-js.git"
   },
   "bugs": {
     "url": "https://github.com/unbound/sdk-js/issues"

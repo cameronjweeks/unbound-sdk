@@ -4,7 +4,14 @@ export class RecordTypesService {
     this.user = new UserRecordTypeDefaultsService(sdk);
   }
 
-  async create({ name, description, create, update, read, delete: deleteUsers }) {
+  async create({
+    name,
+    description,
+    create,
+    update,
+    read,
+    delete: deleteUsers,
+  }) {
     this.sdk.validateParams(
       { name, description },
       {
@@ -150,7 +157,11 @@ export class UserRecordTypeDefaultsService {
       body: deleteData,
     };
 
-    const result = await this.sdk._fetch('/recordTypes/user/', 'DELETE', params);
+    const result = await this.sdk._fetch(
+      '/recordTypes/user/',
+      'DELETE',
+      params,
+    );
     return result;
   }
 

@@ -4,31 +4,36 @@ export class PhoneNumbersService {
     this.carrier = new PhoneNumberCarrierService(sdk);
   }
 
-  async search({ 
-    type, 
-    country, 
-    state, 
-    city, 
-    startsWith, 
-    endsWith, 
-    contains, 
-    limit, 
-    minimumBlockSize, 
-    sms, 
-    mms, 
-    voice 
+  async search({
+    type,
+    country,
+    state,
+    city,
+    startsWith,
+    endsWith,
+    contains,
+    limit,
+    minimumBlockSize,
+    sms,
+    mms,
+    voice,
   }) {
     // Validate optional parameters
     const validationSchema = {};
     if ('type' in arguments[0]) validationSchema.type = { type: 'string' };
-    if ('country' in arguments[0]) validationSchema.country = { type: 'string' };
+    if ('country' in arguments[0])
+      validationSchema.country = { type: 'string' };
     if ('state' in arguments[0]) validationSchema.state = { type: 'string' };
     if ('city' in arguments[0]) validationSchema.city = { type: 'string' };
-    if ('startsWith' in arguments[0]) validationSchema.startsWith = { type: 'string' };
-    if ('endsWith' in arguments[0]) validationSchema.endsWith = { type: 'string' };
-    if ('contains' in arguments[0]) validationSchema.contains = { type: 'string' };
+    if ('startsWith' in arguments[0])
+      validationSchema.startsWith = { type: 'string' };
+    if ('endsWith' in arguments[0])
+      validationSchema.endsWith = { type: 'string' };
+    if ('contains' in arguments[0])
+      validationSchema.contains = { type: 'string' };
     if ('limit' in arguments[0]) validationSchema.limit = { type: 'number' };
-    if ('minimumBlockSize' in arguments[0]) validationSchema.minimumBlockSize = { type: 'number' };
+    if ('minimumBlockSize' in arguments[0])
+      validationSchema.minimumBlockSize = { type: 'number' };
     if ('sms' in arguments[0]) validationSchema.sms = { type: 'boolean' };
     if ('mms' in arguments[0]) validationSchema.mms = { type: 'boolean' };
     if ('voice' in arguments[0]) validationSchema.voice = { type: 'boolean' };
@@ -38,19 +43,19 @@ export class PhoneNumbersService {
     }
 
     const params = {
-      query: { 
-        type, 
-        country, 
-        state, 
-        city, 
-        startsWith, 
-        endsWith, 
-        contains, 
-        limit, 
-        minimumBlockSize, 
-        sms, 
-        mms, 
-        voice 
+      query: {
+        type,
+        country,
+        state,
+        city,
+        startsWith,
+        endsWith,
+        contains,
+        limit,
+        minimumBlockSize,
+        sms,
+        mms,
+        voice,
       },
     };
 
@@ -86,21 +91,27 @@ export class PhoneNumbersService {
       },
     );
 
-    const result = await this.sdk._fetch(`/phoneNumbers/${phoneNumber}`, 'DELETE');
+    const result = await this.sdk._fetch(
+      `/phoneNumbers/${phoneNumber}`,
+      'DELETE',
+    );
     return result;
   }
 
-  async update(id, { 
-    name, 
-    messagingWebHookUrl, 
-    voiceWebHookUrl, 
-    voiceAppExternalUrl, 
-    voiceAppExternalMethod, 
-    voiceApp, 
-    voiceAppMetaData, 
-    voiceRecordTypeId, 
-    messagingRecordTypeId 
-  }) {
+  async update(
+    id,
+    {
+      name,
+      messagingWebHookUrl,
+      voiceWebHookUrl,
+      voiceAppExternalUrl,
+      voiceAppExternalMethod,
+      voiceApp,
+      voiceAppMetaData,
+      voiceRecordTypeId,
+      messagingRecordTypeId,
+    },
+  ) {
     this.sdk.validateParams(
       { id },
       {
@@ -119,14 +130,18 @@ export class PhoneNumbersService {
 
     const updateData = {};
     if (name) updateData.name = name;
-    if (messagingWebHookUrl) updateData.messagingWebHookUrl = messagingWebHookUrl;
+    if (messagingWebHookUrl)
+      updateData.messagingWebHookUrl = messagingWebHookUrl;
     if (voiceWebHookUrl) updateData.voiceWebHookUrl = voiceWebHookUrl;
-    if (voiceAppExternalUrl) updateData.voiceAppExternalUrl = voiceAppExternalUrl;
-    if (voiceAppExternalMethod) updateData.voiceAppExternalMethod = voiceAppExternalMethod;
+    if (voiceAppExternalUrl)
+      updateData.voiceAppExternalUrl = voiceAppExternalUrl;
+    if (voiceAppExternalMethod)
+      updateData.voiceAppExternalMethod = voiceAppExternalMethod;
     if (voiceApp) updateData.voiceApp = voiceApp;
     if (voiceAppMetaData) updateData.voiceAppMetaData = voiceAppMetaData;
     if (voiceRecordTypeId) updateData.voiceRecordTypeId = voiceRecordTypeId;
-    if (messagingRecordTypeId) updateData.messagingRecordTypeId = messagingRecordTypeId;
+    if (messagingRecordTypeId)
+      updateData.messagingRecordTypeId = messagingRecordTypeId;
 
     const params = {
       body: updateData,
@@ -149,7 +164,11 @@ export class PhoneNumbersService {
       body: { cnam },
     };
 
-    const result = await this.sdk._fetch(`/phoneNumbers/cnam/${phoneNumber}`, 'PUT', params);
+    const result = await this.sdk._fetch(
+      `/phoneNumbers/cnam/${phoneNumber}`,
+      'PUT',
+      params,
+    );
     return result;
   }
 
@@ -161,7 +180,637 @@ export class PhoneNumbersService {
       },
     );
 
-    const result = await this.sdk._fetch(`/phoneNumbers/format/${number}`, 'GET');
+    const result = await this.sdk._fetch(
+      `/phoneNumbers/format/${number}`,
+      'GET',
+    );
+    return result;
+  }
+
+  async getRoutingOptions() {
+    const result = await this.sdk._fetch(
+      '/phoneNumbers/routing-options',
+      'GET',
+    );
+    return result;
+  }
+
+  async getSupportedCountries() {
+    const result = await this.sdk._fetch(
+      '/phoneNumbers/supported-countries',
+      'GET',
+    );
+    return result;
+  }
+
+  // Porting Methods
+
+  /**
+   * Check portability of phone numbers using two-phase validation
+   *
+   * Phase 1 (Default): Internal validation using LRN lookup
+   * - Validates ownership, duplicates, and carrier compatibility
+   * - Sets portabilityStatus to 'pending'
+   *
+   * Phase 2 (runPortabilityCheck: true): External validation
+   * - Runs full portability check with carrier
+   * - Updates portabilityStatus to 'portable', 'not-portable', or 'error'
+   *
+   * @param {Object} params
+   * @param {string[]} params.phoneNumbers - Array of +E.164 formatted phone numbers
+   * @param {string} [params.portingOrderId] - Optional porting order ID to save results to
+   * @param {boolean} [params.runPortabilityCheck=false] - Run external portability validation
+   * @returns {Promise<Object>} Portability check results
+   */
+  async checkPortability({
+    phoneNumbers,
+    portingOrderId,
+    runPortabilityCheck = false,
+  }) {
+    this.sdk.validateParams(
+      { phoneNumbers, runPortabilityCheck },
+      {
+        phoneNumbers: { type: 'array', required: true },
+        runPortabilityCheck: { type: 'boolean', required: false },
+      },
+    );
+
+    const body = { phoneNumbers, runPortabilityCheck };
+    if (portingOrderId) body.portingOrderId = portingOrderId;
+
+    const result = await this.sdk._fetch(
+      '/phoneNumbers/porting/portability-check',
+      'POST',
+      {
+        body: body,
+      },
+    );
+    return result;
+  }
+
+  /**
+   * Create a draft porting order (no phone numbers - add them via checkPortability)
+   * @param {Object} params
+   * @param {string} [params.customerReference] - Customer-specified reference number
+   * @param {Object} [params.endUser] - End user information
+   * @param {Object} [params.endUser.admin] - Admin contact info
+   * @param {string} [params.endUser.admin.entityName] - Business/entity name
+   * @param {string} [params.endUser.admin.authPersonName] - Authorized person name
+   * @param {string} [params.endUser.admin.billingPhoneNumber] - Billing phone number
+   * @param {string} [params.endUser.admin.accountNumber] - Account number with current provider
+   * @param {string} [params.endUser.admin.taxIdentifier] - Tax identification number (EU)
+   * @param {string} [params.endUser.admin.pinPasscode] - PIN/passcode for account access
+   * @param {string} [params.endUser.admin.businessIdentifier] - Business identifier (EU)
+   * @param {Object} [params.endUser.location] - Location information
+   * @param {string} [params.endUser.location.streetAddress] - Street address
+   * @param {string} [params.endUser.location.extendedAddress] - Apt/suite/etc
+   * @param {string} [params.endUser.location.locality] - City
+   * @param {string} [params.endUser.location.administrativeArea] - State/province
+   * @param {string} [params.endUser.location.postalCode] - ZIP/postal code
+   * @param {string} [params.endUser.location.countryCode] - 2-letter country code
+   * @param {Object} [params.activationSettings] - Activation preferences
+   * @param {string} [params.activationSettings.focDatetimeRequested] - Requested FOC date/time (ISO 8601 UTC)
+   * @param {boolean} [params.activationSettings.fastPortEligible] - Request fast port if available
+   * @param {string} [params.portOrderType] - Port type: 'full' or 'partial' (defaults to 'full')
+   * @param {string[]} [params.tags] - Array of tags for organization
+   * @returns {Promise<Object>} Created draft porting order with ID and status 'draft'
+   * @example
+   * // Create empty draft order, then add numbers via checkPortability
+   * const order = await sdk.phoneNumbers.createPortingOrder({
+   *   customerReference: "CUST-123",
+   *   endUser: { admin: { entityName: "My Company" } }
+   * });
+   *
+   * // Phase 1: Add numbers with internal validation (pending status)
+   * await sdk.phoneNumbers.checkPortability({
+   *   phoneNumbers: ["+15551234567"],
+   *   portingOrderId: order.id
+   * });
+   *
+   * // Phase 2: Run external portability check when ready
+   * await sdk.phoneNumbers.checkPortability({
+   *   phoneNumbers: ["+15551234567"],
+   *   portingOrderId: order.id,
+   *   runPortabilityCheck: true
+   * });
+   */
+  async createPortingOrder({
+    customerReference,
+    endUser,
+    activationSettings,
+    portOrderType,
+    tags,
+  } = {}) {
+    // Creates draft order without phone numbers - use checkPortability to add them
+    const body = {};
+    if (customerReference) body.customerReference = customerReference;
+    if (endUser) body.endUser = endUser;
+    if (activationSettings) body.activationSettings = activationSettings;
+    if (portOrderType) body.portOrderType = portOrderType;
+    if (tags) body.tags = tags;
+
+    const result = await this.sdk._fetch(
+      '/phoneNumbers/porting/orders',
+      'POST',
+      {
+        body: body,
+      },
+    );
+    return result;
+  }
+
+  async getPortingOrders({
+    page,
+    status,
+    customerReference,
+    sort,
+    limit,
+    id,
+    operatorType = 'contains',
+  } = {}) {
+    const query = {
+      page,
+      status,
+      customerReference,
+      id,
+      operatorType,
+      sort,
+      limit,
+    };
+
+    const url = '/phoneNumbers/porting/orders';
+
+    const params = {
+      query,
+    };
+
+    const result = await this.sdk._fetch(url, 'GET', params);
+    return result;
+  }
+
+  /**
+   * Get a porting order with optional related data
+   * @param {string} id - Porting order ID
+   * @param {Object} [options]
+   * @param {boolean} [options.includePhoneNumbers=true] - Include phone numbers array
+   * @param {boolean} [options.includeExceptions=true] - Include exceptions array
+   * @param {boolean} [options.includeDocuments=true] - Include documents array with upload status
+   * @returns {Promise<Object>} Porting order with requested related data
+   */
+  async getPortingOrder(
+    id,
+    {
+      includePhoneNumbers = true,
+      includeExceptions = true,
+      includeDocuments = true,
+    } = {},
+  ) {
+    this.sdk.validateParams(
+      { id },
+      {
+        id: { type: 'string', required: true },
+      },
+    );
+
+    const params = new URLSearchParams();
+    if (includePhoneNumbers !== undefined)
+      params.append('includePhoneNumbers', includePhoneNumbers);
+    if (includeExceptions !== undefined)
+      params.append('includeExceptions', includeExceptions);
+    if (includeDocuments !== undefined)
+      params.append('includeDocuments', includeDocuments);
+
+    const queryString = params.toString();
+    const url = queryString
+      ? `/phoneNumbers/porting/orders/${id}?${queryString}`
+      : `/phoneNumbers/porting/orders/${id}`;
+
+    const result = await this.sdk._fetch(url, 'GET');
+    return result;
+  }
+
+  /**
+   * Update a draft porting order (order info only - manage numbers via checkPortability)
+   * @param {string} id - Porting order ID
+   * @param {Object} params - Order information to update
+   * @param {string} [params.customerReference] - Customer-specified reference number
+   * @param {Object} [params.endUser] - End user information
+   * @param {Object} [params.activationSettings] - Activation preferences
+   * @param {string} [params.portOrderType] - Port type: 'full' or 'partial'
+   * @param {string[]} [params.tags] - Array of tags for organization
+   * @returns {Promise<Object>} Updated porting order
+   */
+  async updatePortingOrder(
+    id,
+    {
+      customerReference,
+      endUser,
+      activationSettings,
+      portOrderType,
+      tags,
+    } = {},
+  ) {
+    this.sdk.validateParams(
+      { id },
+      {
+        id: { type: 'string', required: true },
+      },
+    );
+
+    const body = {};
+
+    if (customerReference) body.customerReference = customerReference;
+    if (endUser) body.endUser = endUser;
+    if (activationSettings) body.activationSettings = activationSettings;
+    if (portOrderType) body.portOrderType = portOrderType;
+    if (tags) body.tags = tags;
+
+    const result = await this.sdk._fetch(
+      `/phoneNumbers/porting/orders/${id}`,
+      'PUT',
+      {
+        body: body,
+      },
+    );
+    return result;
+  }
+
+  /**
+   * Submit a draft porting order for processing (validates all required fields)
+   * @param {string} id - Porting order ID
+   * @returns {Promise<Object>} Submitted porting order with Telnyx status
+   */
+  async submitPortingOrder(id) {
+    this.sdk.validateParams(
+      { id },
+      {
+        id: { type: 'string', required: true },
+      },
+    );
+
+    // Submit the draft order (status is implied)
+    const body = {
+      status: 'submit',
+    };
+
+    const result = await this.sdk._fetch(
+      `/phoneNumbers/porting/orders/${id}`,
+      'PUT',
+      {
+        body: body,
+      },
+    );
+    return result;
+  }
+
+  /**
+   * Delete/cancel a porting order (soft delete)
+   * - Draft orders: Immediately cancelled locally
+   * - Submitted orders: Cancelled via Telnyx, then status updated to cancel-pending
+   * - Cannot delete orders within 48 hours of FOC date
+   * - Cannot delete already completed or cancelled orders
+   * @param {string} id - Porting order ID
+   * @returns {Promise<Object>} Cancellation result with new status
+   */
+  async deletePortingOrder(id) {
+    this.sdk.validateParams(
+      { id },
+      {
+        id: { type: 'string', required: true },
+      },
+    );
+
+    const result = await this.sdk._fetch(
+      `/phoneNumbers/porting/orders/${id}`,
+      'DELETE',
+    );
+    return result;
+  }
+
+  /**
+   * Remove a specific phone number from a porting order
+   * - Only works on draft orders (not submitted orders)
+   * - Cannot remove the last phone number (delete entire order instead)
+   * - Validates that phone number exists in the order
+   * @param {string} portingOrderId - Porting order ID
+   * @param {string} phoneNumber - Phone number to remove (+E.164 format)
+   * @returns {Promise<Object>} Removal confirmation with updated counts
+   * @example
+   * await sdk.phoneNumbers.removePhoneNumberFromOrder(
+   *   "port_123...",
+   *   "+15551234567"
+   * );
+   */
+  async removePhoneNumberFromOrder(portingOrderId, phoneNumber) {
+    this.sdk.validateParams(
+      { portingOrderId, phoneNumber },
+      {
+        portingOrderId: { type: 'string', required: true },
+        phoneNumber: { type: 'string', required: true },
+      },
+    );
+
+    const result = await this.sdk._fetch(
+      `/phoneNumbers/porting/orders/${encodeURIComponent(
+        portingOrderId,
+      )}/numbers/${encodeURIComponent(phoneNumber)}`,
+      'DELETE',
+    );
+    return result;
+  }
+
+  /**
+   * Attach or update a document for a porting order
+   *
+   * @param {Object} params
+   * @param {string} params.portingOrderId - Porting order ID
+   * @param {string} [params.storageId] - Storage ID of uploaded file (null to clear)
+   * @param {string} [params.documentType='loa'] - Document type (loa, bill, csr, etc.)
+   * @param {boolean} [params.isRequired=false] - Whether document is required
+   * @param {string} [params.documentId] - Optional: Update existing document by ID
+   * @returns {Promise<Object>} Document attachment result with action (created/updated)
+   */
+  async attachPortingDocument({
+    portingOrderId,
+    storageId = null,
+    documentType = 'loa',
+    isRequired = false,
+    documentId = null,
+  }) {
+    this.sdk.validateParams(
+      { portingOrderId, documentType },
+      {
+        portingOrderId: { type: 'string', required: true },
+        documentType: { type: 'string', required: true },
+      },
+    );
+
+    const body = {
+      portingOrderId,
+      storageId,
+      documentType,
+      isRequired,
+    };
+
+    if (documentId) body.documentId = documentId;
+
+    const result = await this.sdk._fetch(
+      '/phoneNumbers/porting/documents',
+      'POST',
+      {
+        body: body,
+      },
+    );
+    return result;
+  }
+
+  /**
+   * Generate Letter of Authorization (LOA) for a porting order
+   *
+   * Automatically generates a PDF LOA document using template data from the porting order,
+   * uploads it to storage, and attaches it to the order as an LOA document.
+   *
+   * @param {Object} params
+   * @param {string} params.portingOrderId - Porting order ID to generate LOA for
+   * @param {string} params.signerName - Full name of person signing the LOA
+   * @param {string} params.signerTitle - Job title of person signing the LOA
+   * @returns {Promise<Object>} Generation result with document ID and storage information
+   */
+  async generateLoa({ portingOrderId, signerName, signerTitle }) {
+    this.sdk.validateParams(
+      { portingOrderId, signerName, signerTitle },
+      {
+        portingOrderId: { type: 'string', required: true },
+        signerName: { type: 'string', required: true },
+        signerTitle: { type: 'string', required: true },
+      },
+    );
+
+    const result = await this.sdk._fetch(
+      `/phoneNumbers/porting/orders/${encodeURIComponent(
+        portingOrderId,
+      )}/generate-loa`,
+      'POST',
+      {
+        body: { signerName, signerTitle },
+      },
+    );
+    return result;
+  }
+
+  async getPortingEvents(id, { page, limit } = {}) {
+    this.sdk.validateParams(
+      { id },
+      {
+        id: { type: 'string', required: true },
+      },
+    );
+
+    const params = new URLSearchParams();
+    if (page) params.append('page', page);
+    if (limit) params.append('limit', limit);
+
+    const queryString = params.toString();
+    const url = queryString
+      ? `/phoneNumbers/porting/orders/${id}/events?${queryString}`
+      : `/phoneNumbers/porting/orders/${id}/events`;
+
+    const result = await this.sdk._fetch(url, 'GET');
+    return result;
+  }
+
+  /**
+   * Get available activation dates for a porting order
+   * - Creates the porting order in external system if not already created
+   * - Updates the order data to ensure it's current before fetching dates
+   * - Returns list of available activation dates for user selection
+   * - Validates that phone numbers and required order details are complete
+   * @param {string} id - Porting order ID
+   * @returns {Promise<Object>} Available activation dates and order status
+   * @example
+   * const dates = await sdk.phoneNumbers.getFocWindows("port_123...");
+   * // Returns:
+   * // {
+   * //   id: "port_123...",
+   * //   status: "draft",
+   * //   availableDates: [
+   * //     { date: "2025-08-30T00:00:00.000Z", type: "Standard", available: true },
+   * //     { date: "2025-09-02T00:00:00.000Z", type: "Express", available: true }
+   * //   ],
+   * //   phoneNumbersCount: 1,
+   * //   orderReady: true
+   * // }
+   */
+  async getFocWindows(id) {
+    this.sdk.validateParams(
+      { id },
+      {
+        id: { type: 'string', required: true },
+      },
+    );
+
+    const result = await this.sdk._fetch(
+      `/phoneNumbers/porting/orders/${id}/foc-windows`,
+      'GET',
+    );
+    return result;
+  }
+
+  /**
+   * Sync a porting order with the carrier
+   * Fetches the latest order details and comments from the carrier and updates the local database
+   * @param {string} id - Porting order ID
+   * @returns {Promise<Object>} Sync results including updates made and comments added
+   * @example
+   * const syncResult = await sdk.phoneNumbers.syncPortingOrder("port_123...");
+   * // Returns:
+   * // {
+   * //   id: "port_123...",
+   * //   carrierOrderId: "carrier_abc123",
+   * //   orderUpdated: true,
+   * //   commentsAdded: 2,
+   * //   errors: []
+   * // }
+   */
+  async syncPortingOrder(id) {
+    this.sdk.validateParams(
+      { id },
+      {
+        id: { type: 'string', required: true },
+      },
+    );
+
+    const result = await this.sdk._fetch(
+      `/phoneNumbers/porting/orders/${id}/sync`,
+      'POST',
+    );
+    return result;
+  }
+
+  /**
+   * Get comments for a porting order
+   * @param {string} id - Porting order ID
+   * @param {Object} [options] - Query options
+   * @param {string} [options.includeInternal='true'] - Include internal comments ('true', 'false', 'only')
+   * @returns {Promise<Object>} Comments list with metadata
+   * @example
+   * // Get all comments
+   * const allComments = await sdk.phoneNumbers.getPortingComments("port_123...");
+   *
+   * // Get only public comments
+   * const publicComments = await sdk.phoneNumbers.getPortingComments("port_123...", { includeInternal: 'false' });
+   *
+   * // Get only internal comments
+   * const internalComments = await sdk.phoneNumbers.getPortingComments("port_123...", { includeInternal: 'only' });
+   */
+  async getPortingComments(id, { includeInternal = 'true' } = {}) {
+    this.sdk.validateParams(
+      { id },
+      {
+        id: { type: 'string', required: true },
+      },
+    );
+
+    const params = new URLSearchParams();
+    if (includeInternal !== 'true') {
+      params.append('includeInternal', includeInternal);
+    }
+
+    const queryString = params.toString();
+    const url = `/phoneNumbers/porting/orders/${id}/comments${
+      queryString ? '?' + queryString : ''
+    }`;
+
+    const result = await this.sdk._fetch(url, 'GET');
+    return result;
+  }
+
+  /**
+   * Post a comment on a porting order
+   * @param {string} id - Porting order ID
+   * @param {Object} params - Comment parameters
+   * @param {string} params.comment - Comment body text
+   * @param {boolean} [params.isInternal=false] - Whether this is an internal comment (not shared with carrier)
+   * @returns {Promise<Object>} Created comment details
+   * @example
+   * // Post a public comment (shared with carrier)
+   * const publicComment = await sdk.phoneNumbers.postPortingComment("port_123...", {
+   *   comment: "Please expedite this port request",
+   *   isInternal: false
+   * });
+   *
+   * // Post an internal comment (team use only)
+   * const internalComment = await sdk.phoneNumbers.postPortingComment("port_123...", {
+   *   comment: "Customer called - they need this ASAP",
+   *   isInternal: true
+   * });
+   */
+  async postPortingComment(id, { comment, isInternal = false }) {
+    this.sdk.validateParams(
+      { id, comment },
+      {
+        id: { type: 'string', required: true },
+        comment: { type: 'string', required: true },
+        isInternal: { type: 'boolean', required: false },
+      },
+    );
+
+    const result = await this.sdk._fetch(
+      `/phoneNumbers/porting/orders/${id}/comments`,
+      'POST',
+      {
+        body: { comment, isInternal },
+      },
+    );
+    return result;
+  }
+
+  /**
+   * Auto-create porting orders by grouping phone numbers by carrier
+   *
+   * Analyzes phone numbers using internal LRN lookup, groups them by carrier,
+   * and either previews the groupings (dry run) or creates separate porting
+   * orders for each carrier group.
+   *
+   * @param {Object} params
+   * @param {string[]} params.phoneNumbers - Array of +E.164 formatted phone numbers (max 100)
+   * @param {string} params.name - Base name for orders (will be appended with carrier names)
+   * @param {boolean} [params.dryRun=false] - If true, returns preview without creating orders
+   * @returns {Promise<Object>} Carrier groups and creation results
+   * @example
+   * // Preview carrier groupings
+   * const preview = await sdk.phoneNumbers.autoCreateOrders({
+   *   phoneNumbers: ['+15551234567', '+15551234568', '+15551234569'],
+   *   name: 'Q1 2025 Port',
+   *   dryRun: true
+   * });
+   * // Returns carrier groups with proposed order names
+   *
+   * // Create orders for each carrier
+   * const result = await sdk.phoneNumbers.autoCreateOrders({
+   *   phoneNumbers: ['+15551234567', '+15551234568', '+15551234569'],
+   *   name: 'Q1 2025 Port',
+   *   dryRun: false
+   * });
+   * // Returns created orders and any errors
+   */
+  async autoCreateOrders({ phoneNumbers, name, dryRun = false }) {
+    this.sdk.validateParams(
+      { phoneNumbers, name },
+      {
+        phoneNumbers: { type: 'array', required: true },
+        name: { type: 'string', required: true },
+        dryRun: { type: 'boolean', required: false },
+      },
+    );
+
+    const result = await this.sdk._fetch(
+      '/phoneNumbers/porting/auto-create-orders',
+      'POST',
+      {
+        body: { phoneNumbers, name, dryRun },
+      },
+    );
     return result;
   }
 }
@@ -185,7 +834,11 @@ export class PhoneNumberCarrierService {
       query: { updateVoiceConnection, updateMessagingConnection },
     };
 
-    const result = await this.sdk._fetch(`/phoneNumbers/carrier/syncPhoneNumbers/${carrier}`, 'POST', params);
+    const result = await this.sdk._fetch(
+      `/phoneNumbers/carrier/syncPhoneNumbers/${carrier}`,
+      'POST',
+      params,
+    );
     return result;
   }
 
@@ -197,7 +850,10 @@ export class PhoneNumberCarrierService {
       },
     );
 
-    const result = await this.sdk._fetch(`/phoneNumbers/carrier/${phoneNumber}`, 'GET');
+    const result = await this.sdk._fetch(
+      `/phoneNumbers/carrier/${phoneNumber}`,
+      'GET',
+    );
     return result;
   }
 
@@ -209,7 +865,10 @@ export class PhoneNumberCarrierService {
       },
     );
 
-    const result = await this.sdk._fetch(`/phoneNumbers/carrier/${phoneNumber}`, 'DELETE');
+    const result = await this.sdk._fetch(
+      `/phoneNumbers/carrier/${phoneNumber}`,
+      'DELETE',
+    );
     return result;
   }
 }

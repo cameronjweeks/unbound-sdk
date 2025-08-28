@@ -19,16 +19,17 @@ export class LookupService {
     return result;
   }
 
-  async lrn(phoneNumber) {
+  async lrn(phoneNumber, cnam = false) {
     this.sdk.validateParams(
-      { phoneNumber },
+      { phoneNumber, cnam },
       {
         phoneNumber: { type: 'string', required: true },
+        cnam: { type: 'boolean', required: false },
       },
     );
 
     const params = {
-      query: { phoneNumber },
+      query: { phoneNumber, cnam },
     };
 
     const result = await this.sdk._fetch('/lookup/lrn', 'GET', params);

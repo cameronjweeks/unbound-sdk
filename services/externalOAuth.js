@@ -89,7 +89,11 @@ export class ExternalOAuthService {
       query: { name },
     };
 
-    const result = await this.sdk._fetch('/externalOAuth/byName', 'GET', params);
+    const result = await this.sdk._fetch(
+      '/externalOAuth/byName',
+      'GET',
+      params,
+    );
     return result;
   }
 
@@ -106,7 +110,11 @@ export class ExternalOAuthService {
       query: { scope, provider },
     };
 
-    const result = await this.sdk._fetch('/externalOAuth/byScopeAndProvider', 'GET', params);
+    const result = await this.sdk._fetch(
+      '/externalOAuth/byScopeAndProvider',
+      'GET',
+      params,
+    );
     return result;
   }
 

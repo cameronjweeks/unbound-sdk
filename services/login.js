@@ -53,24 +53,82 @@ export class LoginService {
 
   async validate() {
     const options = {};
-    const validation = await this.sdk._fetch('/login/validate', 'POST', options, true);
+    const validation = await this.sdk._fetch(
+      '/login/validate',
+      'POST',
+      options,
+      true,
+    );
     return validation;
   }
 
-  async changePassword(currentPassword, newPassword) {
+  async changePassword(newPassword) {
     this.sdk.validateParams(
-      { currentPassword, newPassword },
+      { newPassword },
       {
-        currentPassword: { type: 'string', required: true },
         newPassword: { type: 'string', required: true },
       },
     );
 
     const options = {
-      body: { currentPassword, newPassword },
+      body: { password: newPassword },
     };
 
-    const result = await this.sdk._fetch('/login/changePassword', 'POST', options);
+    const result = await this.sdk._fetch(
+      '/login/changePassword',
+      'PUT',
+      options,
+    );
+    return result;
+  }
+
+  async getPasswordRequirements() {
+    const result = await this.sdk._fetch(
+      '/login/passwordRequirements',
+      'GET',
+      {},
+    );
+    return result;
+  }
+
+  async validatePasswordStrength(password) {
+    this.sdk.validateParams(
+      { password },
+      {
+        password: { type: 'string', required: true },
+      },
+    );
+
+    const options = {
+      body: { password },
+    };
+
+    const result = await this.sdk._fetch(
+      '/login/validatePasswordStrength',
+      'POST',
+      options,
+    );
+    return result;
+  }
+
+  async forgotPassword(email) {
+    this.sdk.validateParams(
+      { email },
+      {
+        email: { type: 'string', required: true },
+      },
+    );
+
+    const options = {
+      body: { email },
+    };
+
+    const result = await this.sdk._fetch(
+      '/login/forgotPassword',
+      'POST',
+      options,
+      true,
+    );
     return result;
   }
 }

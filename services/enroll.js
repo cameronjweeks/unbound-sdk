@@ -15,7 +15,11 @@ export class EnrollService {
       query: { namespace },
     };
 
-    const result = await this.sdk._fetch('/enroll/checkNamespace', 'GET', params);
+    const result = await this.sdk._fetch(
+      '/enroll/checkNamespace',
+      'GET',
+      params,
+    );
     return result;
   }
 
@@ -48,7 +52,11 @@ export class EnrollService {
       body: updateData,
     };
 
-    const result = await this.sdk._fetch(`/enroll/enrollment/${enrollmentId}`, 'PUT', params);
+    const result = await this.sdk._fetch(
+      `/enroll/enrollment/${enrollmentId}`,
+      'PUT',
+      params,
+    );
     return result;
   }
 
@@ -114,7 +122,11 @@ export class EnrollService {
       body: paymentData,
     };
 
-    const result = await this.sdk._fetch('/enroll/verifyPayment', 'POST', params);
+    const result = await this.sdk._fetch(
+      '/enroll/verifyPayment',
+      'POST',
+      params,
+    );
     return result;
   }
 
@@ -130,7 +142,11 @@ export class EnrollService {
       body: sessionData,
     };
 
-    const result = await this.sdk._fetch('/enroll/stripeVerification', 'POST', params);
+    const result = await this.sdk._fetch(
+      '/enroll/stripeVerification',
+      'POST',
+      params,
+    );
     return result;
   }
 
@@ -146,7 +162,11 @@ export class EnrollService {
       query: { sessionId },
     };
 
-    const result = await this.sdk._fetch('/enroll/stripeVerification/status', 'GET', params);
+    const result = await this.sdk._fetch(
+      '/enroll/stripeVerification/status',
+      'GET',
+      params,
+    );
     return result;
   }
 
@@ -162,7 +182,11 @@ export class EnrollService {
       body: agreementData,
     };
 
-    const result = await this.sdk._fetch('/enroll/signAgreement', 'POST', params);
+    const result = await this.sdk._fetch(
+      '/enroll/signAgreement',
+      'POST',
+      params,
+    );
     return result;
   }
 
@@ -191,7 +215,10 @@ export class EnrollService {
       },
     );
 
-    const result = await this.sdk._fetch(`/enroll/brand/${enrollmentId}`, 'GET');
+    const result = await this.sdk._fetch(
+      `/enroll/brand/${enrollmentId}`,
+      'GET',
+    );
     return result;
   }
 
@@ -203,7 +230,10 @@ export class EnrollService {
       },
     );
 
-    const result = await this.sdk._fetch(`/enroll/buildStatus/${enrollmentId}`, 'GET');
+    const result = await this.sdk._fetch(
+      `/enroll/buildStatus/${enrollmentId}`,
+      'GET',
+    );
     return result;
   }
 
@@ -220,7 +250,11 @@ export class EnrollService {
       body: completionData,
     };
 
-    const result = await this.sdk._fetch(`/enroll/complete/${enrollmentId}`, 'POST', params);
+    const result = await this.sdk._fetch(
+      `/enroll/complete/${enrollmentId}`,
+      'POST',
+      params,
+    );
     return result;
   }
 
@@ -232,7 +266,10 @@ export class EnrollService {
       },
     );
 
-    const result = await this.sdk._fetch(`/enroll/createDatabase/${enrollmentId}`, 'POST');
+    const result = await this.sdk._fetch(
+      `/enroll/createDatabase/${enrollmentId}`,
+      'POST',
+    );
     return result;
   }
 }

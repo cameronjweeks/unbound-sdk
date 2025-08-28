@@ -5,7 +5,12 @@ export class VideoService {
 
   async clearToken() {
     const params = {};
-    const result = await this.sdk._fetch(`/video/clearVideoToken`, 'POST', params, true);
+    const result = await this.sdk._fetch(
+      `/video/clearVideoToken`,
+      'POST',
+      params,
+      true,
+    );
     return result;
   }
 
@@ -211,13 +216,19 @@ export class VideoService {
     if ('startTime' in update) validationSchema.startTime = { type: 'string' };
     if ('endTime' in update) validationSchema.endTime = { type: 'string' };
     if ('timezone' in update) validationSchema.timezone = { type: 'string' };
-    if ('waitingRoom' in update) validationSchema.waitingRoom = { type: 'boolean' };
+    if ('waitingRoom' in update)
+      validationSchema.waitingRoom = { type: 'boolean' };
     if ('hosts' in update) validationSchema.hosts = { type: 'array' };
-    if ('participants' in update) validationSchema.participants = { type: 'array' };
-    if ('startCameraMuted' in update) validationSchema.startCameraMuted = { type: 'boolean' };
-    if ('startCameraMutedAfter' in update) validationSchema.startCameraMutedAfter = { type: 'number' };
-    if ('startMicrophoneMuted' in update) validationSchema.startMicrophoneMuted = { type: 'boolean' };
-    if ('startMicrophoneMutedAfter' in update) validationSchema.startMicrophoneMutedAfter = { type: 'number' };
+    if ('participants' in update)
+      validationSchema.participants = { type: 'array' };
+    if ('startCameraMuted' in update)
+      validationSchema.startCameraMuted = { type: 'boolean' };
+    if ('startCameraMutedAfter' in update)
+      validationSchema.startCameraMutedAfter = { type: 'number' };
+    if ('startMicrophoneMuted' in update)
+      validationSchema.startMicrophoneMuted = { type: 'boolean' };
+    if ('startMicrophoneMutedAfter' in update)
+      validationSchema.startMicrophoneMutedAfter = { type: 'number' };
 
     if (Object.keys(validationSchema).length > 0) {
       this.sdk.validateParams(update, validationSchema);
@@ -271,7 +282,7 @@ export class VideoService {
     const params = {
       query: options,
     };
-    
+
     const result = await this.sdk._fetch('/video/meetings', 'GET', params);
     return result;
   }
@@ -281,25 +292,31 @@ export class VideoService {
       { roomId },
       {
         roomId: { type: 'string', required: true },
-      }
+      },
     );
-    
+
     // Validate optional parameters
     const validationSchema = {};
-    if ('participantId' in params) validationSchema.participantId = { type: 'string' };
-    if ('startTime' in params) validationSchema.startTime = { type: 'string' };  
+    if ('participantId' in params)
+      validationSchema.participantId = { type: 'string' };
+    if ('startTime' in params) validationSchema.startTime = { type: 'string' };
     if ('endTime' in params) validationSchema.endTime = { type: 'string' };
-    if ('granularity' in params) validationSchema.granularity = { type: 'string' };
+    if ('granularity' in params)
+      validationSchema.granularity = { type: 'string' };
     if ('timezone' in params) validationSchema.timezone = { type: 'string' };
     if (Object.keys(validationSchema).length > 0) {
       this.sdk.validateParams(params, validationSchema);
     }
-    
+
     const options = {
       query: params,
-    }
+    };
 
-    const result = await this.sdk._fetch(`/video/meetings/${roomId}/analytics`, 'GET', options);
+    const result = await this.sdk._fetch(
+      `/video/meetings/${roomId}/analytics`,
+      'GET',
+      options,
+    );
     return result;
   }
 
@@ -327,8 +344,12 @@ export class VideoService {
     const params = {
       body: participant,
     };
-    
-    const result = await this.sdk._fetch(`/video/${roomId}/participants`, 'POST', params);
+
+    const result = await this.sdk._fetch(
+      `/video/${roomId}/participants`,
+      'POST',
+      params,
+    );
     return result;
   }
 
@@ -341,7 +362,11 @@ export class VideoService {
     );
 
     const params = {};
-    const result = await this.sdk._fetch(`/video/${roomId}/close`, 'POST', params);
+    const result = await this.sdk._fetch(
+      `/video/${roomId}/close`,
+      'POST',
+      params,
+    );
     return result;
   }
 
@@ -357,7 +382,11 @@ export class VideoService {
       body: { token },
     };
 
-    const result = await this.sdk._fetch('/video/validateGuestToken', 'POST', params);
+    const result = await this.sdk._fetch(
+      '/video/validateGuestToken',
+      'POST',
+      params,
+    );
     return result;
   }
 
@@ -374,7 +403,11 @@ export class VideoService {
       body: stats,
     };
 
-    const result = await this.sdk._fetch(`/video/${roomId}/stats`, 'POST', params);
+    const result = await this.sdk._fetch(
+      `/video/${roomId}/stats`,
+      'POST',
+      params,
+    );
     return result;
   }
 }

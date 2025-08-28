@@ -3,7 +3,16 @@ export class PortalsService {
     this.sdk = sdk;
   }
 
-  async create({ name, domain, settings, isPublic, customCss, customJs, favicon, logo }) {
+  async create({
+    name,
+    domain,
+    settings,
+    isPublic,
+    customCss,
+    customJs,
+    favicon,
+    logo,
+  }) {
     this.sdk.validateParams(
       { name, domain },
       {
@@ -34,7 +43,10 @@ export class PortalsService {
     return result;
   }
 
-  async update(portalId, { name, domain, settings, isPublic, customCss, customJs, favicon, logo }) {
+  async update(
+    portalId,
+    { name, domain, settings, isPublic, customCss, customJs, favicon, logo },
+  ) {
     this.sdk.validateParams(
       { portalId },
       {
@@ -121,7 +133,10 @@ export class PortalsService {
       },
     );
 
-    const result = await this.sdk._fetch(`/portals/${portalId}/verify-dns`, 'POST');
+    const result = await this.sdk._fetch(
+      `/portals/${portalId}/verify-dns`,
+      'POST',
+    );
     return result;
   }
 }
