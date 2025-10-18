@@ -14,24 +14,99 @@ export class VideoService {
     return result;
   }
 
-  async joinRoom(room, password, email) {
+  async joinRoom(
+    room,
+    password,
+    email,
+    name,
+    firstName,
+    lastName,
+    tokenType = 'cookie',
+    token,
+  ) {
     this.sdk.validateParams(
-      { room, password, email },
+      { room, password, email, name, firstName, lastName, tokenType, token },
       {
         room: { type: 'string', required: true },
         password: { type: 'string', required: false },
         email: { type: 'string', required: false },
+        name: { type: 'string', required: false },
+        firstName: { type: 'string', required: false },
+        lastName: { type: 'string', required: false },
+        tokenType: { type: 'string', required: true },
+        token: { type: 'string', required: false },
       },
     );
 
     const params = {
       body: {
+        room,
         password,
         email,
-        tokenType: 'cookie',
+        name,
+        firstName,
+        lastName,
+        tokenType,
+        token,
       },
     };
-    const result = await this.sdk._fetch(`/video/${room}/join`, 'POST', params);
+    const result = await this.sdk._fetch(
+      `/video/${room}/join`,
+      'POST',
+      params,
+      true,
+    );
+    return result;
+  }
+
+  async joinRoomSip({
+    room,
+    password,
+    phoneNumber,
+    engagementSessionId,
+    voiceChannelId,
+    serverId,
+    meetingJoinType = 'outboundApi',
+  }) {
+    this.sdk.validateParams(
+      {
+        room,
+        password,
+        phoneNumber,
+        engagementSessionId,
+        voiceChannelId,
+        serverId,
+        meetingJoinType,
+      },
+      {
+        room: { type: 'string', required: true },
+        password: { type: 'string', required: false },
+        phoneNumber: { type: 'string', required: true },
+        engagementSessionId: { type: 'string', required: false },
+        voiceChannelId: { type: 'string', required: true },
+        serverId: { type: 'string', required: true },
+        meetingJoinType: { type: 'string', required: true },
+      },
+    );
+
+    const params = {
+      body: {
+        room,
+        password,
+        phoneNumber,
+        engagementSessionId,
+        voiceChannelId,
+        serverId,
+        meetingJoinType,
+        isSip: true,
+      },
+    };
+    const result = await this.sdk._fetch(
+      `/video/${room}/join`,
+      'POST',
+      params,
+      true,
+    );
     return result;
   }
 
@@ -133,6 +208,7 @@ export class VideoService {
     password,
     startTime,
     endTime,
+    isAllDay,
     duration,
     durationUnit,
     timezone,
@@ -143,6 +219,8 @@ export class VideoService {
     startCameraMutedAfter,
     startMicrophoneMuted,
     startMicrophoneMutedAfter,
+    enableChat,
+    engagementSessionId,
   }) {
     this.sdk.validateParams(
       {
@@ -150,6 +228,7 @@ export class VideoService {
         password,
         startTime,
         endTime,
+        isAllDay,
         duration,
         durationUnit,
         timezone,
@@ -160,12 +239,15 @@ export class VideoService {
         startCameraMutedAfter,
         startMicrophoneMuted,
         startMicrophoneMutedAfter,
+        enableChat,
+        engagementSessionId,
       },
       {
         name: { type: 'string', required: false },
         password: { type: 'string', required: false },
         startTime: { type: 'string', required: false },
         endTime: { type: 'string', required: false },
+        isAllDay: { type: 'boolean', required: false },
         duration: { type: 'number', required: false },
         durationUnit: { type: 'string', required: false },
         timezone: { type: 'string', required: false },
@@ -176,6 +258,8 @@ export class VideoService {
         startCameraMutedAfter: { type: 'number', required: false },
         startMicrophoneMuted: { type: 'boolean', required: false },
         startMicrophoneMutedAfter: { type: 'number', required: false },
+        enableChat: { type: 'boolean', required: false },
+        engagementSessionId: { type: 'string', required: false },
       },
     );
     const params = {
@@ -184,6 +268,7 @@ export class VideoService {
         password,
         startTime,
         endTime,
+        isAllDay,
         duration,
         durationUnit,
         timezone,
@@ -194,6 +279,8 @@ export class VideoService {
         startCameraMutedAfter,
         startMicrophoneMuted,
         startMicrophoneMutedAfter,
+        enableChat,
+        engagementSessionId,
       },
     };
     const result = await this.sdk._fetch(`/video`, 'POST', params);
@@ -229,6 +316,12 @@ export class VideoService {
       validationSchema.startMicrophoneMuted = { type: 'boolean' };
     if ('startMicrophoneMutedAfter' in update)
       validationSchema.startMicrophoneMutedAfter = { type: 'number' };
+    if ('startRecordingOn' in update)
+      validationSchema.startRecordingOn = { type: 'boolean' };
+    if ('startTranscribingOn' in update)
+      validationSchema.startTranscribingOn = { type: 'boolean' };
+    if ('enableChat' in update)
+      validationSchema.enableChat = { type: 'boolean' };
 
     if (Object.keys(validationSchema).length > 0) {
       this.sdk.validateParams(update, validationSchema);
@@ -240,6 +333,28 @@ export class VideoService {
       },
     };
     const result = await this.sdk._fetch(`/video/${roomId}`, 'PUT', params);
+    return result;
+  }
+
+  async updateRoomBot(roomId, { isRecording, isTranscribing }) {
+    this.sdk.validateParams(
+      { roomId, isRecording, isTranscribing },
+      {
+        roomId: { type: 'string', required: true },
+        isRecording: { type: 'boolean', required: false },
+        isTranscribing: { type: 'boolean', required: false },
+      },
+    );
+    const update = {
+      isRecording,
+      isTranscribing,
+    };
+    const params = {
+      body: {
+        ...update,
+      },
+    };
+    const result = await this.sdk._fetch(`/video/${roomId}/bot`, 'PUT', params);
     return result;
   }
 
@@ -265,6 +380,24 @@ export class VideoService {
       params,
     );
     return result;
+  }
+
+  async describe(roomId, { includeParticipants = false }) {
+    this.sdk.validateParams(
+      { roomId, includeParticipants },
+      {
+        roomId: { type: 'string', required: true },
+        includeParticipants: { type: 'boolean', required: false },
+      },
+    );
+
+    const params = {
+      query: {
+        includeParticipants,
+      },
+    };
+
+    return await this.sdk._fetch(`/video/${roomId}`, 'GET', params);
   }
 
   async listMeetings(options = {}) {
@@ -370,11 +503,12 @@ export class VideoService {
     return result;
   }
 
-  async validateGuestToken(token) {
+  async validateGuestToken(id, token) {
     this.sdk.validateParams(
-      { token },
+      { id, token },
       {
-        token: { type: 'string', required: true },
+        id: { type: 'string', required: true },
+        token: { type: 'string', required: false },
       },
     );
 
@@ -383,7 +517,7 @@ export class VideoService {
     };
 
     const result = await this.sdk._fetch(
-      '/video/validateGuestToken',
+      `/video/${id}/validate`,
       'POST',
       params,
     );
@@ -408,6 +542,332 @@ export class VideoService {
       'POST',
       params,
     );
+    return result;
+  }
+
+  async submitSurvey({
+    videoRoomId,
+    participantId,
+    email,
+    videoQuality,
+    audioQuality,
+    feedback,
+  }) {
+    this.sdk.validateParams(
+      { videoRoomId },
+      {
+        videoRoomId: { type: 'string', required: true },
+      },
+    );
+
+    // Validate optional parameters
+    const validationSchema = {};
+    if (participantId !== undefined)
+      validationSchema.participantId = { type: 'string' };
+    if (email !== undefined) validationSchema.email = { type: 'string' };
+    if (videoQuality !== undefined)
+      validationSchema.videoQuality = { type: 'number' };
+    if (audioQuality !== undefined)
+      validationSchema.audioQuality = { type: 'number' };
+    if (feedback !== undefined) validationSchema.feedback = { type: 'string' };
+
+    const surveyData = {
+      participantId,
+      email,
+      videoQuality,
+      audioQuality,
+      feedback,
+    };
+
+    if (Object.keys(validationSchema).length > 0) {
+      this.sdk.validateParams(surveyData, validationSchema);
+    }
+
+    const params = {
+      body: {
+        videoRoomId,
+        ...surveyData,
+      },
+    };
+
+    const result = await this.sdk._fetch('/video/survey', 'POST', params);
+    return result;
+  }
+
+  /**
+   * Post a chat message to a video room
+   * @param {string} roomId - The video room ID
+   * @param {Array} content - Message content as JSON array (TipTap format)
+   * @param {string} [storageId] - Optional storage ID for attachments
+   * @returns {Promise} Created feed message
+   */
+  async postChatMessage(roomId, content, storageId = null) {
+    this.sdk.validateParams(
+      { roomId, content },
+      {
+        roomId: { type: 'string', required: true },
+        content: { type: 'array', required: true },
+      },
+    );
+
+    const body = {
+      content,
+    };
+
+    if (storageId) {
+      body.storageId = storageId;
+    }
+
+    const params = { body };
+
+    const result = await this.sdk._fetch(
+      `/video/${roomId}/chat`,
+      'POST',
+      params,
+    );
+    return result;
+  }
+
+  /**
+   * Get chat messages from a video room
+   * @param {string} roomId - The video room ID
+   * @param {Object} [options={}] - Query options
+   * @param {string} [options.select] - Fields to select
+   * @param {number} [options.limit] - Limit number of results
+   * @param {string} [options.nextId] - Cursor for next page
+   * @param {string} [options.previousId] - Cursor for previous page
+   * @param {string} [options.orderByDirection] - 'ASC' or 'DESC'
+   * @param {boolean} [options.expandDetails] - Whether to expand details
+   * @returns {Promise} Chat messages with participant info
+   */
+  async getChatMessages(roomId, options = {}) {
+    this.sdk.validateParams(
+      { roomId },
+      {
+        roomId: { type: 'string', required: true },
+      },
+    );
+
+    // Validate optional parameters
+    const validationSchema = {};
+    if ('select' in options) validationSchema.select = { type: 'string' };
+    if ('limit' in options) validationSchema.limit = { type: 'number' };
+    if ('nextId' in options) validationSchema.nextId = { type: 'string' };
+    if ('previousId' in options)
+      validationSchema.previousId = { type: 'string' };
+    if ('orderByDirection' in options)
+      validationSchema.orderByDirection = { type: 'string' };
+    if ('expandDetails' in options)
+      validationSchema.expandDetails = { type: 'boolean' };
+
+    if (Object.keys(validationSchema).length > 0) {
+      this.sdk.validateParams(options, validationSchema);
+    }
+
+    const params = {
+      query: options,
+    };
+
+    const result = await this.sdk._fetch(
+      `/video/${roomId}/chat`,
+      'GET',
+      params,
+    );
+    return result;
+  }
+
+  /**
+   * Edit a chat message in a video room
+   * Only the participant who created the message can edit it
+   * @param {string} roomId - The video room ID
+   * @param {string} messageId - The message ID to edit
+   * @param {Array} content - Updated message content as JSON array (TipTap format)
+   * @param {string} [storageId] - Optional storage ID for attachments
+   * @returns {Promise} Updated feed message
+   */
+  async editChatMessage(roomId, messageId, content, storageId = null) {
+    this.sdk.validateParams(
+      { roomId, messageId, content },
+      {
+        roomId: { type: 'string', required: true },
+        messageId: { type: 'string', required: true },
+        content: { type: 'array', required: true },
+      },
+    );
+
+    const body = {
+      content,
+    };
+
+    if (storageId) {
+      body.storageId = storageId;
+    }
+
+    const params = { body };
+
+    const result = await this.sdk._fetch(
+      `/video/${roomId}/chat/${messageId}`,
+      'PUT',
+      params,
+    );
+    return result;
+  }
+
+  /**
+   * Delete a chat message from a video room
+   * Hosts can delete any message, participants can only delete their own
+   * @param {string} roomId - The video room ID
+   * @param {string} messageId - The message ID to delete
+   * @returns {Promise} Deletion result
+   */
+  async deleteChatMessage(roomId, messageId) {
+    this.sdk.validateParams(
+      { roomId, messageId },
+      {
+        roomId: { type: 'string', required: true },
+        messageId: { type: 'string', required: true },
+      },
+    );
+
+    const params = {};
+
+    const result = await this.sdk._fetch(
+      `/video/${roomId}/chat/${messageId}`,
+      'DELETE',
+      params,
+    );
+    return result;
+  }
+
+  /**
+   * Create or update user's default video room settings
+   * @param {Object} settings - Video room settings
+   * @param {string} [settings.userId] - Optional userId to update settings for another user
+   * @param {boolean} [settings.waitingRoom] - Enable waiting room by default
+   * @param {boolean} [settings.enableChat] - Enable chat by default
+   * @param {number} [settings.maxVideoResolution] - Max video resolution (1080 or 720)
+   * @param {boolean} [settings.startCameraMuted] - Start with camera muted
+   * @param {number} [settings.startCameraMutedAfter] - Auto-mute cameras after N participants
+   * @param {boolean} [settings.startMicrophoneMuted] - Start with microphone muted
+   * @param {number} [settings.startMicrophoneMutedAfter] - Auto-mute mics after N participants
+   * @param {number} [settings.endMeetingWithoutHostTimeLimit] - Time limit to end meeting without host (seconds)
+   * @param {boolean} [settings.startRecordingOn] - Start recording automatically
+   * @param {boolean} [settings.startTranscribingOn] - Start transcribing automatically
+   * @param {Array<string>} [settings.hosts] - Default hosts to add to every meeting
+   * @param {Array<string>} [settings.participants] - Default participants to add to every meeting
+   * @returns {Promise} Created/updated settings
+   */
+  async createUserSettings(settings = {}) {
+    // Validate optional parameters
+    const validationSchema = {};
+    if ('userId' in settings) validationSchema.userId = { type: 'string' };
+    if ('waitingRoom' in settings)
+      validationSchema.waitingRoom = { type: 'boolean' };
+    if ('enableChat' in settings)
+      validationSchema.enableChat = { type: 'boolean' };
+    if ('maxVideoResolution' in settings)
+      validationSchema.maxVideoResolution = { type: 'number' };
+    if ('startCameraMuted' in settings)
+      validationSchema.startCameraMuted = { type: 'boolean' };
+    if ('startCameraMutedAfter' in settings)
+      validationSchema.startCameraMutedAfter = { type: 'number' };
+    if ('startMicrophoneMuted' in settings)
+      validationSchema.startMicrophoneMuted = { type: 'boolean' };
+    if ('startMicrophoneMutedAfter' in settings)
+      validationSchema.startMicrophoneMutedAfter = { type: 'number' };
+    if ('endMeetingWithoutHostTimeLimit' in settings)
+      validationSchema.endMeetingWithoutHostTimeLimit = { type: 'number' };
+    if ('startRecordingOn' in settings)
+      validationSchema.startRecordingOn = { type: 'boolean' };
+    if ('startTranscribingOn' in settings)
+      validationSchema.startTranscribingOn = { type: 'boolean' };
+    if ('hosts' in settings) validationSchema.hosts = { type: 'array' };
+    if ('participants' in settings)
+      validationSchema.participants = { type: 'array' };
+
+    if (Object.keys(validationSchema).length > 0) {
+      this.sdk.validateParams(settings, validationSchema);
+    }
+
+    const params = {
+      body: settings,
+    };
+
+    const result = await this.sdk._fetch(
+      '/video/settings/user',
+      'POST',
+      params,
+    );
+    return result;
+  }
+
+  /**
+   * Update user's default video room settings
+   * This is an alias for createOrUpdateUserSettings
+   * @param {Object} settings - Video room settings to update
+   * @returns {Promise} Updated settings
+   */
+  async updateUserSettings(settings = {}) {
+    // Validate optional parameters (same as createOrUpdateUserSettings)
+    const validationSchema = {};
+    if ('userId' in settings) validationSchema.userId = { type: 'string' };
+    if ('waitingRoom' in settings)
+      validationSchema.waitingRoom = { type: 'boolean' };
+    if ('enableChat' in settings)
+      validationSchema.enableChat = { type: 'boolean' };
+    if ('maxVideoResolution' in settings)
+      validationSchema.maxVideoResolution = { type: 'number' };
+    if ('startCameraMuted' in settings)
+      validationSchema.startCameraMuted = { type: 'boolean' };
+    if ('startCameraMutedAfter' in settings)
+      validationSchema.startCameraMutedAfter = { type: 'number' };
+    if ('startMicrophoneMuted' in settings)
+      validationSchema.startMicrophoneMuted = { type: 'boolean' };
+    if ('startMicrophoneMutedAfter' in settings)
+      validationSchema.startMicrophoneMutedAfter = { type: 'number' };
+    if ('endMeetingWithoutHostTimeLimit' in settings)
+      validationSchema.endMeetingWithoutHostTimeLimit = { type: 'number' };
+    if ('startRecordingOn' in settings)
+      validationSchema.startRecordingOn = { type: 'boolean' };
+    if ('startTranscribingOn' in settings)
+      validationSchema.startTranscribingOn = { type: 'boolean' };
+    if ('hosts' in settings) validationSchema.hosts = { type: 'array' };
+    if ('participants' in settings)
+      validationSchema.participants = { type: 'array' };
+
+    if (Object.keys(validationSchema).length > 0) {
+      this.sdk.validateParams(settings, validationSchema);
+    }
+
+    const params = {
+      body: settings,
+    };
+
+    const result = await this.sdk._fetch('/video/settings/user', 'PUT', params);
+    return result;
+  }
+
+  /**
+   * Get user's default video room settings
+   * @param {string} [userId] - Optional userId to get settings for another user
+   * @returns {Promise} User's video room settings
+   */
+  async getUserSettings(userId = null) {
+    const params = {
+      query: {},
+    };
+
+    if (userId) {
+      this.sdk.validateParams(
+        { userId },
+        {
+          userId: { type: 'string', required: true },
+        },
+      );
+      params.query.userId = userId;
+    }
+
+    const result = await this.sdk._fetch('/video/settings/user', 'GET', params);
     return result;
   }
 }

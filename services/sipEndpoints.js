@@ -3,24 +3,24 @@ export class SipEndpointsService {
     this.sdk = sdk;
   }
 
-  async create({ username, password, domain, displayName, description }) {
+  async create({ recordTypeId, type, userId, name }) {
     this.sdk.validateParams(
-      { username, password, domain },
+      { recordTypeId, type, userId, name },
       {
-        username: { type: 'string', required: true },
-        password: { type: 'string', required: true },
-        domain: { type: 'string', required: true },
-        displayName: { type: 'string', required: false },
-        description: { type: 'string', required: false },
+        recordTypeId: { type: 'string', required: false },
+        type: { type: 'string', required: true },
+        userId: { type: 'string', required: false },
+        name: { type: 'string', required: false },
       },
     );
 
-    const endpointData = { username, password, domain };
-    if (displayName) endpointData.displayName = displayName;
-    if (description) endpointData.description = description;
-
     const params = {
-      body: endpointData,
+      body: {
+        recordTypeId,
+        type,
+        userId,
+        name,
+      },
     };
 
     const result = await this.sdk._fetch('/sipEndpoints', 'POST', params);

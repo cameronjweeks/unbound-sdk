@@ -30,7 +30,7 @@ export class BaseSDK {
       this.token = token;
       this.fwRequestId = fwRequestId;
     }
-
+    this.baseURL;
     this.transports = new Map();
     this.debugMode = false;
     this._initializeEnvironment();
@@ -102,6 +102,14 @@ export class BaseSDK {
     this.transports.delete(name);
   }
 
+  _getJsonSafely(str, defaultValue) {
+    try {
+      return JSON.parse(str);
+    } catch (e) {
+      return defaultValue;
+    }
+  }
+
   async _getAvailableTransport(forceFetch = false) {
     if (forceFetch) {
       return null; // Use built-in HTTP
@@ -159,114 +167,123 @@ export class BaseSDK {
   }
 
   async _fetch(endpoint, method, params = {}, forceFetch = false) {
-    const { body, query, headers = {} } = params;
+    const { body, query, headers = {}, returnRawResponse = false } = params;
 
     this.validateParams(
-      { endpoint, method, body, query, headers },
+      { endpoint, method, body, query, headers, returnRawResponse },
       {
         endpoint: { type: 'string', required: true },
         method: { type: 'string', required: true },
         body: { type: 'object', required: false },
         query: { type: 'object', required: false },
         headers: { type: 'object', required: false },
+        returnRawResponse: { type: 'boolean', required: false },
       },
     );
 
+    // Add auth headers
+    if (this.token) {
+      headers.Authorization = `Bearer ${this.token}`;
+    }
+    if (this.fwRequestId) {
+      headers['x-request-id-fw'] = this.fwRequestId;
+    }
+    if (this.callId) {
+      headers['x-call-id'] = this.callId;
+    }
+
+    params.headers = headers;
+
     // Try transport plugins first
+    console.log(`sdk :: request :: forceFetch:${forceFetch} :: endpoint:${endpoint}`);
     const transport = await this._getAvailableTransport(forceFetch);
+    let response;
     if (transport) {
       try {
-        const result = await transport.request(endpoint, method, params, {
+        response = await transport.request(endpoint, method, params, {
           namespace: this.namespace,
           token: this.token,
           callId: this.callId,
           fwRequestId: this.fwRequestId,
           baseURL: this.baseURL || this.fullUrl,
         });
-        
-        // Debug logging for transport plugins
-        if (this.debugMode) {
-          const status = result?.status || 200;
-          console.log(`API :: ${transport.name} :: ${method.toUpperCase()} :: ${endpoint} :: ${status}`);
-        }
-        
-        return result;
       } catch (err) {
         // IMPORTANT: This catch block should ONLY handle transport-level failures
         // (e.g., WebSocket disconnected, plugin unavailable, network errors)
-        // 
+        //
         // Transport plugins should:
         // - RETURN API error responses normally (400, 500, etc.) as response objects
         // - ONLY THROW for transport mechanism failures
-        //
-        // This ensures API errors are passed through unchanged, just like built-in fetch
-        
-        if (this.debugMode) {
-          console.log(`API :: Transport ${transport.name} failure :: ${method.toUpperCase()} :: ${endpoint} :: ${err.message}`);
-        }
+
         console.warn(
           `Transport ${transport.name} mechanism failed, falling back to HTTP:`,
           err.message,
         );
-        // Fall through to built-in HTTP fetch
+
+        // Built-in HTTP transport (fallback)
+        return this._httpRequest(endpoint, method, params, returnRawResponse);
       }
+    } else {
+      // No transport available, fallback to HTTP
+      if (forceFetch && process.env.AUTH_V3_TOKEN_TYPE_OVERRIDE) {
+        params.headers['x-token-type-override'] = process.env.AUTH_V3_TOKEN_TYPE_OVERRIDE;
+      }
+      return this._httpRequest(endpoint, method, params, returnRawResponse);
     }
 
-    // Built-in HTTP transport (fallback)
-    return this._httpRequest(endpoint, method, params);
+    // For streaming requests, return the raw response from transports
+    if (returnRawResponse) {
+      return response;
+    }
+
+    return this._processResponse(response, transport.name, method, endpoint);
   }
 
   _isMultipartBody(body) {
     // Check if body is FormData or multipart content
     if (!body) return false;
-    
+
     // Browser FormData
     if (typeof FormData !== 'undefined' && body instanceof FormData) {
       return true;
     }
-    
+
     // Node.js Buffer (our manual multipart construction)
     if (typeof Buffer !== 'undefined' && Buffer.isBuffer(body)) {
       return true;
     }
-    
+
     // Uint8Array (fallback multipart construction)
     if (body instanceof Uint8Array) {
       return true;
     }
-    
+
     // String-based multipart (check for multipart boundaries)
-    if (typeof body === 'string' && body.includes('Content-Disposition: form-data')) {
+    if (
+      typeof body === 'string' &&
+      body.includes('Content-Disposition: form-data')
+    ) {
       return true;
     }
-    
+
     return false;
   }
 
-  async _httpRequest(endpoint, method, params = {}) {
+  async _httpRequest(endpoint, method, params = {}, returnRawResponse = false) {
     const { body, query, headers = {} } = params;
 
     const options = {
       method,
       headers: {
         // Smart content-type detection based on actual body content
-        ...(this._isMultipartBody(body) || headers?.['Content-Type'] || headers?.['content-type']
+        ...(this._isMultipartBody(body) ||
+        headers?.['Content-Type'] ||
+        headers?.['content-type']
           ? {}
           : { 'Content-Type': 'application/json' }),
         ...headers,
       },
     };
-
-    // Add auth headers
-    if (this.token) {
-      options.headers.Authorization = `Bearer ${this.token}`;
-    }
-    if (this.fwRequestId) {
-      options.headers['x-request-id-fw'] = this.fwRequestId;
-    }
-    if (this.callId) {
-      options.headers['x-call-id'] = this.callId;
-    }
 
     // Set credentials for browser environment
     if (this.environment === 'browser') {
@@ -295,7 +312,10 @@ export class BaseSDK {
         body &&
         (body.constructor.name === 'FormData' ||
           typeof body.getBoundary === 'function');
-      const isBuffer = (typeof Buffer !== 'undefined') && Buffer.isBuffer && Buffer.isBuffer(body);
+      const isBuffer =
+        typeof Buffer !== 'undefined' &&
+        Buffer.isBuffer &&
+        Buffer.isBuffer(body);
 
       if (isFormData || isBuffer) {
         options.body = body;
@@ -305,73 +325,130 @@ export class BaseSDK {
     }
 
     const response = await fetch(url, options);
-    
+
+    // For streaming requests, return the raw fetch response
+    if (returnRawResponse) {
+      return response;
+    }
+
+    return this._processResponse(response, 'https', method, endpoint);
+  }
+
+  async _processResponse(response, transport, method, endpoint) {
     // Check if the response indicates an HTTP error
     // These are API/configuration errors, not transport failures
-    if (!response.ok) {
-      let errorBody;
-      const contentType = response.headers.get('content-type') || '';
-      
-      try {
-        if (contentType.includes('application/json')) {
-          errorBody = await response.json();
-        } else {
-          errorBody = await response.text();
-        }
-      } catch (parseError) {
-        errorBody = `HTTP ${response.status} ${response.statusText}`;
-      }
-      
-      // Create a structured error for API/HTTP failures
-      const httpError = new Error(`API :: Error :: https :: ${options.method} :: ${endpoint} :: ${response.status} :: ${response.statusText}`);
-      httpError.status = response.status;
-      httpError.statusText = response.statusText;
-      httpError.method = options.method;
-      httpError.endpoint = endpoint;
-      httpError.body = errorBody;
-      
-      throw httpError;
-    }
-    
-    // Check content type to determine how to parse successful response
-    const contentType = response.headers.get('content-type') || '';
-    let bodyResponse;
-    
-    if (contentType.includes('application/json')) {
-      bodyResponse = await response.json();
-    } else if (contentType.includes('text/')) {
-      bodyResponse = await response.text();
-    } else {
-      // For binary content (PDFs, images, etc), return as ArrayBuffer
-      bodyResponse = await response.arrayBuffer();
-    }
 
     const responseHeaders = response.headers;
     const responseRequestId =
       responseHeaders?.get?.('x-request-id') ||
-      responseHeaders?.['x-request-id'];
+      responseHeaders?.['x-request-id'] ||
+      '';
+
+    const contentType =
+      responseHeaders?.get?.('content-type') ||
+      response?.headers?.['content-type'] ||
+      'application/json';
 
     if (!response.ok) {
-      // Debug logging for HTTP errors
-      if (this.debugMode) {
-        console.log(`API :: https :: ${method.toUpperCase()} :: ${endpoint} :: ${response?.status}`);
+      let errorBody;
+      if (response?.body) {
+        errorBody = response.body;
+      } else if (response?.headers?.['content-type']) {
+        try {
+          if (
+            typeof response?.json === 'function' ||
+            typeof response?.text === 'function'
+          ) {
+            if (contentType.includes('application/json')) {
+              errorBody = await response.json();
+            } else if (contentType.includes('text/')) {
+              errorBody = await response.text();
+            }
+          } else {
+            if (contentType.includes('application/json')) {
+              errorBody = this._getJsonSafely(
+                response?.body,
+                response?.body || {},
+              );
+            } else if (contentType.includes('text/')) {
+              errorBody = response?.body || '';
+            }
+          }
+          if (!errorBody) {
+            errorBody = `HTTP ${response.status} ${response.statusText}`;
+          }
+        } catch (parseError) {
+          errorBody = `HTTP ${response.status} ${response.statusText}`;
+        }
+      } else {
+        errorBody = `HTTP ${response.status} ${response.statusText}`;
       }
-      
-      throw {
-        name: `API :: Error :: https :: ${method} :: ${endpoint} :: ${responseRequestId} :: ${response?.status} :: ${response?.statusText}`,
-        message: bodyResponse?.message || `API Error occured.`,
-        method,
-        endpoint,
-        status: response?.status,
-        statusText: response?.statusText,
-      };
+
+      // Create a structured error for API/HTTP failures
+      const httpError = new Error(
+        `API :: Error :: ${transport} :: ${method.toUpperCase()} :: ${endpoint} :: ${
+          response.status
+        } :: ${response.statusText}`,
+      );
+      httpError.status = response.status;
+      httpError.statusText = response.statusText;
+      httpError.method = method;
+      httpError.endpoint = endpoint;
+      httpError.body = errorBody;
+      httpError.message = errorBody?.error || errorBody?.message || 'API Error';
+
+      // Debug logging for successful HTTP requests
+      if (this.debugMode) {
+        console.log(
+          `API :: ERROR :: ${transport} :: ${method.toUpperCase()} :: ${endpoint} :: ${
+            response?.status
+          } :: ${responseRequestId}`,
+          httpError,
+        );
+      }
+
+      throw httpError;
+    }
+
+    let responseBody;
+    if (response?.body && !contentType) {
+      responseBody = response.body;
+    } else if (contentType) {
+      try {
+        if (transport === 'https') {
+          if (contentType.includes('application/json')) {
+            responseBody = await response.json();
+          } else if (contentType.includes('text/')) {
+            responseBody = await response.text();
+          } else {
+            responseBody = await response.arrayBuffer();
+          }
+        } else {
+          if (contentType.includes('application/json')) {
+            responseBody = this._getJsonSafely(response.body, response.body);
+          } else if (contentType.includes('text/')) {
+            responseBody = response?.body || '';
+          }
+        }
+        if (!responseBody) {
+          responseBody = {};
+        }
+      } catch (parseError) {
+        responseBody = {};
+      }
+    } else {
+      responseBody = {};
     }
 
     // Debug logging for successful HTTP requests
     if (this.debugMode) {
-      console.log(`API :: https :: ${method.toUpperCase()} :: ${endpoint} :: ${response?.status}`);
+      console.log(
+        `API :: ${transport} :: ${method.toUpperCase()} :: ${endpoint} :: ${
+          response?.status
+        } :: ${responseRequestId}`,
+      );
     }
-    
-    return bodyResponse;
+
+    return responseBody;
   }
 }

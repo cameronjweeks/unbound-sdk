@@ -26,55 +26,45 @@ export class ObjectsService {
    * Retrieve an object by ID
    *
    * Preferred usage (new signature):
-   * sdk.objects.byId({ id: 'someId', expandDetails: true })
+   * sdk.objects.byId({ id: 'someId', expandDetails: true, isAiPrompt: true })
    *
    * Legacy usage (deprecated, but supported):
    * sdk.objects.byId('someId', { 'select[]': ['field1', 'field2'] })
    *
    * @param {string|object} args - Either ID string or options object
+   * @param {boolean} [args.isAiPrompt] - Clean data for AI prompt usage (removes system fields)
    * @returns {Promise} Object data
    */
-  async byId(...args) {
-    // New signature: byId({ id, expandDetails })
-    if (
-      args.length === 1 &&
-      typeof args[0] === 'object' &&
-      !Array.isArray(args[0])
-    ) {
-      const { id, expandDetails = false } = args[0];
-
-      this.sdk.validateParams(
-        { id, expandDetails },
-        {
-          id: { type: 'string', required: true },
-          expandDetails: { type: 'boolean', required: false },
-        },
-      );
-
-      const query = {};
-      if (expandDetails) query.expandDetails = expandDetails;
-
-      const params = { query };
-      return await this.sdk._fetch(`/object/${id}`, 'GET', params);
+  async byId(arg1, arg2) {
+    let id;
+    let query = {};
+    if (typeof arg1 === 'string') {
+      id = arg1;
+      if (typeof arg2 === 'object') {
+        query = { ...arg2 };
+      }
+    } else if (typeof arg1 === 'object') {
+      id = arg1.id;
+      query = { ...arg1 };
+      if (query.id) {
+        delete query.id;
+      }
     }
 
-    // Old signature: byId(id, queryParams)
-    if (args.length >= 1 && typeof args[0] === 'string') {
-      const [id, queryParams = {}] = args;
-
-      this.sdk.validateParams(
-        { id },
-        {
-          id: { type: 'string', required: true },
-        },
-      );
-
-      const query = { ...queryParams };
-      const params = { query };
-      return await this.sdk._fetch(`/object/${id}`, 'GET', params);
+    if (Array.isArray(query.select)) {
+      query.select = query.select.join(',');
     }
 
-    throw new Error('Invalid arguments for byId method');
+    this.sdk.validateParams(
+      { id },
+      {
+        id: { type: 'string', required: true },
+      },
+    );
+
+    const params = { query };
+    const result = await this.sdk._fetch(`/object/${id}`, 'GET', params);
+    return result;
   }
 
   /**

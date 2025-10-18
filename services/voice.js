@@ -3,101 +3,48 @@ export class VoiceService {
     this.sdk = sdk;
   }
 
-  async createCall({
+  async call({
     to,
     from,
-    connectionId,
-    callerId,
+    callerIdName,
+    callerIdNumber,
     timeout,
-    machineDetection,
-    machineDetectionTimeout,
-    recordingChannels,
-    record,
-    recordingFormat,
-    recordingTrack,
-    recordingMaxLength,
-    transcribe,
-    transcribeLanguage,
-    webhookUrl,
-    commandId,
-    clientState,
-    customHeaders,
-    sipAuthUsername,
-    sipAuthPassword,
-    sipTransport,
-    sipHeaders,
-    ringTimeout,
-    answeringMachineDetection,
-    detectWordOrPhrase,
-    billingGroupId,
-    answerUrl,
-    answerMethod,
+    confirmAnswer,
+    app,
+    variables,
+    engagementSessionId,
+    voiceChannelId,
+    serverId,
   }) {
     this.sdk.validateParams(
-      { to },
+      {},
       {
-        to: { type: 'string', required: true },
+        to: { type: 'string', required: false },
         from: { type: 'string', required: false },
-        connectionId: { type: 'string', required: false },
-        callerId: { type: 'string', required: false },
+        callerIdName: { type: 'string', required: false },
+        callerIdNumber: { type: 'string', required: false },
         timeout: { type: 'number', required: false },
-        machineDetection: { type: 'boolean', required: false },
-        machineDetectionTimeout: { type: 'number', required: false },
-        recordingChannels: { type: 'string', required: false },
-        record: { type: 'boolean', required: false },
-        recordingFormat: { type: 'string', required: false },
-        recordingTrack: { type: 'string', required: false },
-        recordingMaxLength: { type: 'number', required: false },
-        transcribe: { type: 'boolean', required: false },
-        transcribeLanguage: { type: 'string', required: false },
-        webhookUrl: { type: 'string', required: false },
-        commandId: { type: 'string', required: false },
-        clientState: { type: 'string', required: false },
-        customHeaders: { type: 'array', required: false },
-        sipAuthUsername: { type: 'string', required: false },
-        sipAuthPassword: { type: 'string', required: false },
-        sipTransport: { type: 'string', required: false },
-        sipHeaders: { type: 'array', required: false },
-        ringTimeout: { type: 'number', required: false },
-        answeringMachineDetection: { type: 'string', required: false },
-        detectWordOrPhrase: { type: 'string', required: false },
-        billingGroupId: { type: 'string', required: false },
-        answerUrl: { type: 'string', required: false },
-        answerMethod: { type: 'string', required: false },
+        confirmAnswer: { type: 'boolean', required: false },
+        app: { type: 'object', required: false },
+        variables: { type: 'object', required: false },
+        engagementSessionId: { type: 'string', required: false },
+        voiceChannelId: { type: 'string', required: false },
+        serverId: { type: 'string', required: false },
       },
     );
 
-    const callData = { to };
+    const callData = {};
+    if (to) callData.to = to;
     if (from) callData.from = from;
-    if (connectionId) callData.connectionId = connectionId;
-    if (callerId) callData.callerId = callerId;
-    if (timeout) callData.timeout = timeout;
-    if (machineDetection !== undefined)
-      callData.machineDetection = machineDetection;
-    if (machineDetectionTimeout)
-      callData.machineDetectionTimeout = machineDetectionTimeout;
-    if (recordingChannels) callData.recordingChannels = recordingChannels;
-    if (record !== undefined) callData.record = record;
-    if (recordingFormat) callData.recordingFormat = recordingFormat;
-    if (recordingTrack) callData.recordingTrack = recordingTrack;
-    if (recordingMaxLength) callData.recordingMaxLength = recordingMaxLength;
-    if (transcribe !== undefined) callData.transcribe = transcribe;
-    if (transcribeLanguage) callData.transcribeLanguage = transcribeLanguage;
-    if (webhookUrl) callData.webhookUrl = webhookUrl;
-    if (commandId) callData.commandId = commandId;
-    if (clientState) callData.clientState = clientState;
-    if (customHeaders) callData.customHeaders = customHeaders;
-    if (sipAuthUsername) callData.sipAuthUsername = sipAuthUsername;
-    if (sipAuthPassword) callData.sipAuthPassword = sipAuthPassword;
-    if (sipTransport) callData.sipTransport = sipTransport;
-    if (sipHeaders) callData.sipHeaders = sipHeaders;
-    if (ringTimeout) callData.ringTimeout = ringTimeout;
-    if (answeringMachineDetection)
-      callData.answeringMachineDetection = answeringMachineDetection;
-    if (detectWordOrPhrase) callData.detectWordOrPhrase = detectWordOrPhrase;
-    if (billingGroupId) callData.billingGroupId = billingGroupId;
-    if (answerUrl) callData.answerUrl = answerUrl;
-    if (answerMethod) callData.answerMethod = answerMethod;
+    if (callerIdName) callData.callerIdName = callerIdName;
+    if (callerIdNumber) callData.callerIdNumber = callerIdNumber;
+    if (timeout !== undefined) callData.timeout = timeout;
+    if (confirmAnswer !== undefined) callData.confirmAnswer = confirmAnswer;
+    if (app) callData.app = app;
+    if (variables) callData.variables = variables;
+    if (engagementSessionId) callData.engagementSessionId = engagementSessionId;
+    if (voiceChannelId) callData.voiceChannelId = voiceChannelId;
+    if (serverId) callData.serverId = serverId;
 
     const params = {
       body: callData,
@@ -107,462 +54,209 @@ export class VoiceService {
     return result;
   }
 
-  async hangup(callControlId, clientState, commandId) {
+  async hangup(voiceChannelId) {
     this.sdk.validateParams(
-      { callControlId },
+      { voiceChannelId },
       {
-        callControlId: { type: 'string', required: true },
-        clientState: { type: 'string', required: false },
-        commandId: { type: 'string', required: false },
+        voiceChannelId: { type: 'string', required: true },
       },
     );
 
-    const hangupData = {};
-    if (clientState) hangupData.clientState = clientState;
-    if (commandId) hangupData.commandId = commandId;
+    const result = await this.sdk._fetch(
+      `/voice/calls/${voiceChannelId}`,
+      'DELETE',
+    );
+    return result;
+  }
+
+  async hold(channels) {
+    this.sdk.validateParams(
+      { channels },
+      {
+        channels: { type: 'array', required: true },
+      },
+    );
 
     const params = {
-      body: hangupData,
+      body: { channels },
+    };
+
+    const result = await this.sdk._fetch('/voice/calls/hold', 'PUT', params);
+    return result;
+  }
+
+  async mute(voiceChannelId, action = 'mute', direction = 'in') {
+    this.sdk.validateParams(
+      { voiceChannelId },
+      {
+        voiceChannelId: { type: 'string', required: true },
+        action: { type: 'string', required: false },
+        direction: { type: 'string', required: false },
+      },
+    );
+
+    const params = {
+      body: { action, direction },
     };
 
     const result = await this.sdk._fetch(
-      `/voice/calls/${callControlId}/actions/hangup`,
-      'POST',
+      `/voice/calls/mute/${voiceChannelId}`,
+      'PUT',
       params,
     );
     return result;
   }
 
-  async hold(callControlId, audioUrl, clientState, commandId) {
-    this.sdk.validateParams(
-      { callControlId },
-      {
-        callControlId: { type: 'string', required: true },
-        audioUrl: { type: 'string', required: false },
-        clientState: { type: 'string', required: false },
-        commandId: { type: 'string', required: false },
-      },
-    );
-
-    const holdData = {};
-    if (audioUrl) holdData.audioUrl = audioUrl;
-    if (clientState) holdData.clientState = clientState;
-    if (commandId) holdData.commandId = commandId;
-
-    const params = {
-      body: holdData,
-    };
-
-    const result = await this.sdk._fetch(
-      `/voice/calls/${callControlId}/actions/hold`,
-      'POST',
-      params,
-    );
-    return result;
+  async unmute(voiceChannelId, direction = 'in') {
+    return this.mute(voiceChannelId, 'unmute', direction);
   }
 
-  async unhold(callControlId, clientState, commandId) {
+  async sendDtmf(voiceChannelId, dtmf) {
     this.sdk.validateParams(
-      { callControlId },
+      { voiceChannelId, dtmf },
       {
-        callControlId: { type: 'string', required: true },
-        clientState: { type: 'string', required: false },
-        commandId: { type: 'string', required: false },
-      },
-    );
-
-    const unholdData = {};
-    if (clientState) unholdData.clientState = clientState;
-    if (commandId) unholdData.commandId = commandId;
-
-    const params = {
-      body: unholdData,
-    };
-
-    const result = await this.sdk._fetch(
-      `/voice/calls/${callControlId}/actions/unhold`,
-      'POST',
-      params,
-    );
-    return result;
-  }
-
-  async mute(callControlId, clientState, commandId) {
-    this.sdk.validateParams(
-      { callControlId },
-      {
-        callControlId: { type: 'string', required: true },
-        clientState: { type: 'string', required: false },
-        commandId: { type: 'string', required: false },
-      },
-    );
-
-    const muteData = {};
-    if (clientState) muteData.clientState = clientState;
-    if (commandId) muteData.commandId = commandId;
-
-    const params = {
-      body: muteData,
-    };
-
-    const result = await this.sdk._fetch(
-      `/voice/calls/${callControlId}/actions/mute`,
-      'POST',
-      params,
-    );
-    return result;
-  }
-
-  async unmute(callControlId, clientState, commandId) {
-    this.sdk.validateParams(
-      { callControlId },
-      {
-        callControlId: { type: 'string', required: true },
-        clientState: { type: 'string', required: false },
-        commandId: { type: 'string', required: false },
-      },
-    );
-
-    const unmuteData = {};
-    if (clientState) unmuteData.clientState = clientState;
-    if (commandId) unmuteData.commandId = commandId;
-
-    const params = {
-      body: unmuteData,
-    };
-
-    const result = await this.sdk._fetch(
-      `/voice/calls/${callControlId}/actions/unmute`,
-      'POST',
-      params,
-    );
-    return result;
-  }
-
-  async sendDtmf(callControlId, dtmf, clientState, commandId) {
-    this.sdk.validateParams(
-      { callControlId, dtmf },
-      {
-        callControlId: { type: 'string', required: true },
+        voiceChannelId: { type: 'string', required: true },
         dtmf: { type: 'string', required: true },
-        clientState: { type: 'string', required: false },
-        commandId: { type: 'string', required: false },
       },
     );
 
-    const dtmfData = { dtmf };
-    if (clientState) dtmfData.clientState = clientState;
-    if (commandId) dtmfData.commandId = commandId;
-
     const params = {
-      body: dtmfData,
+      body: { dtmf },
     };
 
     const result = await this.sdk._fetch(
-      `/voice/calls/${callControlId}/actions/send_dtmf`,
+      `/voice/calls/dtmf/${voiceChannelId}`,
       'POST',
       params,
     );
     return result;
   }
 
-  async record(
-    callControlId,
-    recordingChannels,
-    recordingFormat,
-    recordingMaxLength,
-    recordingTerminators,
-    recordingBeep,
-    recordingPlayBeep,
-    clientState,
-    commandId,
-  ) {
+  async record(voiceChannelId, action = 'start', direction = 'both') {
     this.sdk.validateParams(
-      { callControlId },
+      { voiceChannelId },
       {
-        callControlId: { type: 'string', required: true },
-        recordingChannels: { type: 'string', required: false },
-        recordingFormat: { type: 'string', required: false },
-        recordingMaxLength: { type: 'number', required: false },
-        recordingTerminators: { type: 'string', required: false },
-        recordingBeep: { type: 'boolean', required: false },
-        recordingPlayBeep: { type: 'boolean', required: false },
-        clientState: { type: 'string', required: false },
-        commandId: { type: 'string', required: false },
+        voiceChannelId: { type: 'string', required: true },
+        action: { type: 'string', required: false },
+        direction: { type: 'string', required: false },
       },
     );
 
-    const recordData = {};
-    if (recordingChannels) recordData.recordingChannels = recordingChannels;
-    if (recordingFormat) recordData.recordingFormat = recordingFormat;
-    if (recordingMaxLength) recordData.recordingMaxLength = recordingMaxLength;
-    if (recordingTerminators)
-      recordData.recordingTerminators = recordingTerminators;
-    if (recordingBeep !== undefined) recordData.recordingBeep = recordingBeep;
-    if (recordingPlayBeep !== undefined)
-      recordData.recordingPlayBeep = recordingPlayBeep;
-    if (clientState) recordData.clientState = clientState;
-    if (commandId) recordData.commandId = commandId;
-
     const params = {
-      body: recordData,
+      body: { action, direction },
     };
 
     const result = await this.sdk._fetch(
-      `/voice/calls/${callControlId}/actions/record_start`,
+      `/voice/calls/record/${voiceChannelId}`,
       'POST',
       params,
     );
     return result;
   }
 
-  async stopRecording(callControlId, clientState, commandId) {
-    this.sdk.validateParams(
-      { callControlId },
-      {
-        callControlId: { type: 'string', required: true },
-        clientState: { type: 'string', required: false },
-        commandId: { type: 'string', required: false },
-      },
-    );
+  async stopRecording(voiceChannelId, direction = 'both') {
+    return this.record(voiceChannelId, 'stop', direction);
+  }
 
-    const stopData = {};
-    if (clientState) stopData.clientState = clientState;
-    if (commandId) stopData.commandId = commandId;
+  async pauseRecording(voiceChannelId, direction = 'both') {
+    return this.record(voiceChannelId, 'pause', direction);
+  }
 
-    const params = {
-      body: stopData,
-    };
-
-    const result = await this.sdk._fetch(
-      `/voice/calls/${callControlId}/actions/record_stop`,
-      'POST',
-      params,
-    );
-    return result;
+  async resumeRecording(voiceChannelId, direction = 'both') {
+    return this.record(voiceChannelId, 'resume', direction);
   }
 
   async transcribe(
-    callControlId,
-    transcriptionEngine,
-    transcriptionLanguage,
-    transcriptionFormat,
-    clientState,
-    commandId,
+    voiceChannelId,
+    action = 'start',
+    direction = 'in',
+    forwardText,
+    forwardRtp,
   ) {
     this.sdk.validateParams(
-      { callControlId },
+      { voiceChannelId },
       {
-        callControlId: { type: 'string', required: true },
-        transcriptionEngine: { type: 'string', required: false },
-        transcriptionLanguage: { type: 'string', required: false },
-        transcriptionFormat: { type: 'string', required: false },
-        clientState: { type: 'string', required: false },
-        commandId: { type: 'string', required: false },
+        voiceChannelId: { type: 'string', required: true },
+        action: { type: 'string', required: false },
+        direction: { type: 'string', required: false },
+        forwardText: { type: 'object', required: false },
+        forwardRtp: { type: 'object', required: false },
       },
     );
 
-    const transcribeData = {};
-    if (transcriptionEngine)
-      transcribeData.transcriptionEngine = transcriptionEngine;
-    if (transcriptionLanguage)
-      transcribeData.transcriptionLanguage = transcriptionLanguage;
-    if (transcriptionFormat)
-      transcribeData.transcriptionFormat = transcriptionFormat;
-    if (clientState) transcribeData.clientState = clientState;
-    if (commandId) transcribeData.commandId = commandId;
+    const bodyData = { action, direction };
+    if (forwardText) bodyData.forwardText = forwardText;
+    if (forwardRtp) bodyData.forwardRtp = forwardRtp;
 
     const params = {
-      body: transcribeData,
+      body: bodyData,
     };
 
     const result = await this.sdk._fetch(
-      `/voice/calls/${callControlId}/actions/transcription_start`,
+      `/voice/calls/transcribe/${voiceChannelId}`,
       'POST',
       params,
     );
     return result;
   }
 
-  async stopTranscribing(callControlId, clientState, commandId) {
-    this.sdk.validateParams(
-      { callControlId },
-      {
-        callControlId: { type: 'string', required: true },
-        clientState: { type: 'string', required: false },
-        commandId: { type: 'string', required: false },
-      },
-    );
-
-    const stopData = {};
-    if (clientState) stopData.clientState = clientState;
-    if (commandId) stopData.commandId = commandId;
-
-    const params = {
-      body: stopData,
-    };
-
-    const result = await this.sdk._fetch(
-      `/voice/calls/${callControlId}/actions/transcription_stop`,
-      'POST',
-      params,
-    );
-    return result;
+  async stopTranscribing(voiceChannelId, direction = 'in') {
+    return this.transcribe(voiceChannelId, 'stop', direction);
   }
 
-  async transfer(
-    callControlId,
+  async transfer({
+    channels,
     to,
-    from,
-    answerUrl,
-    answerMethod,
-    clientState,
-    commandId,
-  ) {
-    this.sdk.validateParams(
-      { callControlId, to },
-      {
-        callControlId: { type: 'string', required: true },
-        to: { type: 'string', required: true },
-        from: { type: 'string', required: false },
-        answerUrl: { type: 'string', required: false },
-        answerMethod: { type: 'string', required: false },
-        clientState: { type: 'string', required: false },
-        commandId: { type: 'string', required: false },
-      },
-    );
-
-    const transferData = { to };
-    if (from) transferData.from = from;
-    if (answerUrl) transferData.answerUrl = answerUrl;
-    if (answerMethod) transferData.answerMethod = answerMethod;
-    if (clientState) transferData.clientState = clientState;
-    if (commandId) transferData.commandId = commandId;
-
-    const params = {
-      body: transferData,
-    };
-
-    const result = await this.sdk._fetch(
-      `/voice/calls/${callControlId}/actions/transfer`,
-      'POST',
-      params,
-    );
-    return result;
-  }
-
-  async createConference({
-    name,
-    recordingChannels,
-    recordingFormat,
-    recordingMaxLength,
-    recordingTerminators,
-    webhookUrl,
-    commandId,
-    clientState,
+    callerIdName,
+    callerIdNumber,
+    timeout,
+    voiceApp,
   }) {
     this.sdk.validateParams(
-      { name },
+      { channels },
       {
-        name: { type: 'string', required: true },
-        recordingChannels: { type: 'string', required: false },
-        recordingFormat: { type: 'string', required: false },
-        recordingMaxLength: { type: 'number', required: false },
-        recordingTerminators: { type: 'string', required: false },
-        webhookUrl: { type: 'string', required: false },
-        commandId: { type: 'string', required: false },
-        clientState: { type: 'string', required: false },
+        channels: { type: 'array', required: true },
+        to: { type: 'string', required: false },
+        callerIdName: { type: 'string', required: false },
+        callerIdNumber: { type: 'string', required: false },
+        timeout: { type: 'number', required: false },
+        voiceApp: { type: 'object', required: false },
       },
     );
 
-    const conferenceData = { name };
-    if (recordingChannels) conferenceData.recordingChannels = recordingChannels;
-    if (recordingFormat) conferenceData.recordingFormat = recordingFormat;
-    if (recordingMaxLength)
-      conferenceData.recordingMaxLength = recordingMaxLength;
-    if (recordingTerminators)
-      conferenceData.recordingTerminators = recordingTerminators;
-    if (webhookUrl) conferenceData.webhookUrl = webhookUrl;
-    if (commandId) conferenceData.commandId = commandId;
-    if (clientState) conferenceData.clientState = clientState;
+    const bodyData = { channels };
+    if (to) bodyData.to = to;
+    if (callerIdName) bodyData.callerIdName = callerIdName;
+    if (callerIdNumber) bodyData.callerIdNumber = callerIdNumber;
+    if (timeout !== undefined) bodyData.timeout = timeout;
+    if (voiceApp) bodyData.voiceApp = voiceApp;
 
     const params = {
-      body: conferenceData,
-    };
-
-    const result = await this.sdk._fetch('/voice/conferences', 'POST', params);
-    return result;
-  }
-
-  async joinConference(
-    callControlId,
-    conferenceId,
-    startConferenceOnEnter,
-    endConferenceOnExit,
-    muted,
-    hold,
-    holdAudioUrl,
-    clientState,
-    commandId,
-  ) {
-    this.sdk.validateParams(
-      { callControlId, conferenceId },
-      {
-        callControlId: { type: 'string', required: true },
-        conferenceId: { type: 'string', required: true },
-        startConferenceOnEnter: { type: 'boolean', required: false },
-        endConferenceOnExit: { type: 'boolean', required: false },
-        muted: { type: 'boolean', required: false },
-        hold: { type: 'boolean', required: false },
-        holdAudioUrl: { type: 'string', required: false },
-        clientState: { type: 'string', required: false },
-        commandId: { type: 'string', required: false },
-      },
-    );
-
-    const joinData = { conferenceId };
-    if (startConferenceOnEnter !== undefined)
-      joinData.startConferenceOnEnter = startConferenceOnEnter;
-    if (endConferenceOnExit !== undefined)
-      joinData.endConferenceOnExit = endConferenceOnExit;
-    if (muted !== undefined) joinData.muted = muted;
-    if (hold !== undefined) joinData.hold = hold;
-    if (holdAudioUrl) joinData.holdAudioUrl = holdAudioUrl;
-    if (clientState) joinData.clientState = clientState;
-    if (commandId) joinData.commandId = commandId;
-
-    const params = {
-      body: joinData,
+      body: bodyData,
     };
 
     const result = await this.sdk._fetch(
-      `/voice/calls/${callControlId}/actions/conference_join`,
+      '/voice/calls/transfer',
       'POST',
       params,
     );
     return result;
   }
 
-  async leaveConference(callControlId, clientState, commandId) {
+  async conference(channels) {
     this.sdk.validateParams(
-      { callControlId },
+      { channels },
       {
-        callControlId: { type: 'string', required: true },
-        clientState: { type: 'string', required: false },
-        commandId: { type: 'string', required: false },
+        channels: { type: 'array', required: true },
       },
     );
 
-    const leaveData = {};
-    if (clientState) leaveData.clientState = clientState;
-    if (commandId) leaveData.commandId = commandId;
-
     const params = {
-      body: leaveData,
+      body: { channels },
     };
 
     const result = await this.sdk._fetch(
-      `/voice/calls/${callControlId}/actions/conference_leave`,
+      '/voice/calls/conference',
       'POST',
       params,
     );

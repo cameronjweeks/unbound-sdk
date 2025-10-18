@@ -4,7 +4,7 @@
 import { BaseSDK } from './base.js';
 import { LoginService } from './services/login.js';
 import { ObjectsService } from './services/objects.js';
-import { MessagingService } from './services/messaging.js';
+import { MessagingService } from './services/messaging/MessagingService.js';
 import { VideoService } from './services/video.js';
 import { VoiceService } from './services/voice.js';
 import { AIService } from './services/ai.js';
@@ -23,6 +23,7 @@ import { EnrollService } from './services/enroll.js';
 import { PhoneNumbersService } from './services/phoneNumbers.js';
 import { RecordTypesService } from './services/recordTypes.js';
 import { GenerateIdService } from './services/generateId.js';
+import { EngagementMetricsService } from './services/engagementMetrics.js';
 
 class UnboundSDK extends BaseSDK {
   constructor(options = {}) {
@@ -87,6 +88,7 @@ class UnboundSDK extends BaseSDK {
     this.phoneNumbers = new PhoneNumbersService(this);
     this.recordTypes = new RecordTypesService(this);
     this.generateId = new GenerateIdService(this);
+    this.engagementMetrics = new EngagementMetricsService(this);
 
     // Add additional services that might be missing
     this._initializeAdditionalServices();
@@ -151,6 +153,64 @@ class UnboundSDK extends BaseSDK {
       'buildMasterAuth is only available with the internal SDK extension. Please use: sdk.use(InternalExtension)',
     );
   }
+
+  /**
+   * Check SDK configuration and API connectivity
+   * Calls the /health endpoint to verify SDK setup
+   *
+   * @returns {Promise<Object>} Health check result with:
+   *   - healthy: boolean - If API is reachable
+   *   - hasAuthorization: boolean - If auth credentials were received by API
+   *   - authType: string|null - Type of auth detected by API ('bearer', 'cookie', or 'bearer+cookie')
+   *   - namespace: string - Current namespace
+   *   - environment: string - 'node' or 'browser'
+   *   - transport: string - Transport method used ('HTTP', 'WebSocket', etc.)
+   */
+  async status() {
+    try {
+      const response = await this._fetch('/health', 'GET', {
+        returnRawResponse: true,
+      });
+
+      // Parse response
+      let healthData;
+      try {
+        if (typeof response.json === 'function') {
+          healthData = await response.json();
+        } else if (response.body) {
+          healthData = typeof response.body === 'string'
+            ? JSON.parse(response.body)
+            : response.body;
+        } else {
+          healthData = {};
+        }
+      } catch (e) {
+        healthData = {};
+      }
+
+      return {
+        healthy: response.ok || response.status === 200,
+        hasAuthorization: healthData.hasAuthorization || false,
+        authType: healthData.authType || null,
+        namespace: this.namespace,
+        environment: this.environment,
+        transport: healthData.transport || 'unknown',
+        timestamp: healthData.timestamp,
+        url: healthData.url || null,
+        statusCode: response.status,
+      };
+    } catch (error) {
+      return {
+        healthy: false,
+        hasAuthorization: false,
+        authType: null,
+        namespace: this.namespace,
+        environment: this.environment,
+        error: error.message,
+        statusCode: error.status || null,
+      };
+    }
+  }
 }
 
 // Export both the class and a factory function for convenience
@@ -190,4 +250,5 @@ export {
   UserRecordTypeDefaultsService,
 } from './services/recordTypes.js';
 export { GenerateIdService } from './services/generateId.js';
+export { EngagementMetricsService } from './services/engagementMetrics.js';
 export { BaseSDK } from './base.js';

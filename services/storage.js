@@ -212,6 +212,7 @@ export class StorageService {
     fileName,
     formFields,
     endpoint = '/storage/upload',
+    method = 'POST',
   ) {
     const isNode = typeof window === 'undefined';
     let formData, headers;
@@ -231,7 +232,7 @@ export class StorageService {
       headers,
     };
 
-    return await this.sdk._fetch(endpoint, 'POST', params, true);
+    return await this.sdk._fetch(endpoint, method, params, true);
   }
 
   async upload({
@@ -409,7 +410,7 @@ export class StorageService {
       },
     );
 
-    const params = {};
+    const params = { returnRawResponse: true };
     if (download) {
       params.query = { download: 'true' };
     }
@@ -419,7 +420,7 @@ export class StorageService {
       url += `/storage/${path.startsWith('/') ? path.slice(1) : path}`;
     }
 
-    const result = await this.sdk._fetch(url, 'GET', params);
+    const result = await this.sdk._fetch(url, 'GET', params, true);
     return result;
   }
 
@@ -534,12 +535,14 @@ export class StorageService {
   }
 
   async listFiles(options = {}) {
-    const { classification, limit, offset, orderBy, orderDirection } = options;
+    const { classification, folder, limit, offset, orderBy, orderDirection } =
+      options;
 
     // Validate optional parameters
     const validationSchema = {};
     if ('classification' in options)
       validationSchema.classification = { type: 'string' };
+    if ('folder' in options) validationSchema.folder = { type: 'string' };
     if ('limit' in options) validationSchema.limit = { type: 'number' };
     if ('offset' in options) validationSchema.offset = { type: 'number' };
     if ('orderBy' in options) validationSchema.orderBy = { type: 'string' };
@@ -583,5 +586,229 @@ export class StorageService {
       params,
     );
     return result;
+  }
+
+  /**
+   * List storage configurations with optional filtering
+   * @param {Object} options - Filter options
+   * @param {string} options.classification - Filter by classification
+   * @param {string} options.country - Filter by country
+   * @param {boolean} options.isSystem - Filter by system/custom configs
+   * @param {boolean} options.includeGlobal - Include global configurations (default: true)
+   * @returns {Promise<Object>} Object containing configurations and summary
+   */
+  async listStorageConfigurations(options = {}) {
+    const { classification, country, isSystem, includeGlobal } = options;
+
+    // Validate optional parameters
+    const validationSchema = {};
+    if ('classification' in options)
+      validationSchema.classification = { type: 'string' };
+    if ('country' in options) validationSchema.country = { type: 'string' };
+    if ('isSystem' in options) validationSchema.isSystem = { type: 'boolean' };
+    if ('includeGlobal' in options)
+      validationSchema.includeGlobal = { type: 'boolean' };
+
+    if (Object.keys(validationSchema).length > 0) {
+      this.sdk.validateParams(options, validationSchema);
+    }
+
+    const params = {
+      query: options,
+    };
+
+    const result = await this.sdk._fetch(
+      '/storage/configurations',
+      'GET',
+      params,
+    );
+    return result;
+  }
+
+  /**
+   * Create a new custom storage configuration
+   * @param {Object} config - Configuration data
+   * @param {string} config.classification - Configuration classification
+   * @param {string} config.country - Country code
+   * @param {Array} config.s3Regions - S3 regions array
+   * @param {Array} config.gccRegions - Google Cloud regions array
+   * @param {Array} config.azureRegions - Azure regions array
+   * @param {number} config.minimumProviders - Minimum number of providers (default: 1)
+   * @param {number} config.minimumRegionsS3 - Minimum S3 regions (default: 1)
+   * @param {number} config.minimumRegionsGCC - Minimum GCC regions (default: 1)
+   * @param {number} config.minimumRegionsAzure - Minimum Azure regions (default: 1)
+   * @returns {Promise<Object>} Created configuration object
+   */
+  async createStorageConfiguration(config) {
+    const {
+      classification,
+      country,
+      s3Regions,
+      gccRegions,
+      azureRegions,
+      minimumProviders,
+      minimumRegionsS3,
+      minimumRegionsGCC,
+      minimumRegionsAzure,
+    } = config;
+
+    this.sdk.validateParams(config, {
+      classification: { type: 'string', required: true },
+      country: { type: 'string', required: true },
+      s3Regions: { type: 'object', required: false },
+      gccRegions: { type: 'object', required: false },
+      azureRegions: { type: 'object', required: false },
+      minimumProviders: { type: 'number', required: false },
+      minimumRegionsS3: { type: 'number', required: false },
+      minimumRegionsGCC: { type: 'number', required: false },
+      minimumRegionsAzure: { type: 'number', required: false },
+    });
+
+    const params = {
+      body: config,
+    };
+
+    const result = await this.sdk._fetch(
+      '/storage/configurations',
+      'POST',
+      params,
+    );
+    return result;
+  }
+
+  /**
+   * Update an existing storage configuration
+   * System configurations have limited update capabilities (only regions and minimum levels)
+   * Custom configurations can update all fields
+   * @param {string} id - Configuration ID
+   * @param {Object} updates - Update data
+   * @returns {Promise<Object>} Updated configuration object
+   */
+  async updateStorageConfiguration(id, updates) {
+    this.sdk.validateParams(
+      { id, updates },
+      {
+        id: { type: 'string', required: true },
+        updates: { type: 'object', required: true },
+      },
+    );
+
+    const params = {
+      body: updates,
+    };
+
+    const result = await this.sdk._fetch(
+      `/storage/configurations/${id}`,
+      'PUT',
+      params,
+    );
+    return result;
+  }
+
+  /**
+   * Delete a custom storage configuration
+   * System configurations cannot be deleted
+   * @param {string} id - Configuration ID
+   * @returns {Promise<Object>} Deletion confirmation
+   */
+  async deleteStorageConfiguration(id) {
+    this.sdk.validateParams(
+      { id },
+      {
+        id: { type: 'string', required: true },
+      },
+    );
+
+    const result = await this.sdk._fetch(
+      `/storage/configurations/${id}`,
+      'DELETE',
+    );
+    return result;
+  }
+
+  /**
+   * Update file contents and metadata
+   * @param {string} storageId - Storage file ID (required)
+   * @param {Object} params - Update parameters
+   * @param {Object} [params.file] - New file content (Buffer, File, or binary data)
+   * @param {string} [params.fileName] - New file name
+   * @param {string} [params.classification] - New classification
+   * @param {string} [params.folder] - New folder path
+   * @param {boolean} [params.isPublic] - Public access setting
+   * @param {string} [params.country] - Country setting
+   * @param {string} [params.expireAfter] - Expiration setting
+   * @param {string} [params.relatedId] - Related record ID
+   * @returns {Promise<Object>} Updated file details
+   */
+  async updateFile(
+    storageId,
+    {
+      file,
+      fileName,
+      classification,
+      folder,
+      isPublic,
+      country,
+      expireAfter,
+      relatedId,
+    },
+  ) {
+    this.sdk.validateParams(
+      { storageId },
+      {
+        storageId: { type: 'string', required: true },
+        file: { type: 'object', required: false },
+        fileName: { type: 'string', required: false },
+        classification: { type: 'string', required: false },
+        folder: { type: 'string', required: false },
+        isPublic: { type: 'boolean', required: false },
+        country: { type: 'string', required: false },
+        expireAfter: { type: 'string', required: false },
+        relatedId: { type: 'string', required: false },
+      },
+    );
+
+    if (file) {
+      // If updating file content, use multipart form data
+      const formFields = [];
+      if (classification) formFields.push(['classification', classification]);
+      if (folder) formFields.push(['folder', folder]);
+      if (fileName) formFields.push(['fileName', fileName]);
+      if (isPublic !== undefined)
+        formFields.push(['isPublic', isPublic.toString()]);
+      if (country) formFields.push(['country', country]);
+      if (expireAfter) formFields.push(['expireAfter', expireAfter]);
+      if (relatedId) formFields.push(['relatedId', relatedId]);
+
+      return this._performUpload(
+        file,
+        fileName,
+        formFields,
+        `/storage/${storageId}`,
+        'PUT',
+      );
+    } else {
+      // If only updating metadata, use JSON request
+      const updateData = {};
+      if (fileName !== undefined) updateData.fileName = fileName;
+      if (classification !== undefined)
+        updateData.classification = classification;
+      if (folder !== undefined) updateData.folder = folder;
+      if (isPublic !== undefined) updateData.isPublic = isPublic;
+      if (country !== undefined) updateData.country = country;
+      if (expireAfter !== undefined) updateData.expireAfter = expireAfter;
+      if (relatedId !== undefined) updateData.relatedId = relatedId;
+
+      const options = {
+        body: updateData,
+      };
+
+      const result = await this.sdk._fetch(
+        `/storage/${storageId}`,
+        'PUT',
+        options,
+      );
+      return result;
+    }
   }
 }

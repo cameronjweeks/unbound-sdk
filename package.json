@@ -1,6 +1,6 @@
 {
   "name": "@unboundcx/sdk",
-  "version": "2.6.16",
+  "version": "2.8.6",
   "description": "Official JavaScript SDK for the Unbound API - A comprehensive toolkit for integrating with Unbound's communication, AI, and data management services",
   "main": "index.js",
   "type": "module",

@@ -51,13 +51,14 @@ export class LoginService {
     return true;
   }
 
-  async validate() {
+  async validate(forceFetch = true) {
+    console.log('login :: validate :: forceFetch', forceFetch);
     const options = {};
     const validation = await this.sdk._fetch(
       '/login/validate',
       'POST',
       options,
-      true,
+      forceFetch,
     );
     return validation;
   }

@@ -22,11 +22,10 @@ export class GenerativeService {
     method,
   }) {
     this.sdk.validateParams(
-      { method },
+      { method, stream, temperature, subscriptionId, model, prompt, messages },
       {
         prompt: { type: 'string', required: false },
         messages: { type: 'array', required: false },
-        relatedId: { type: 'string', required: false },
         model: { type: 'string', required: false },
         temperature: { type: 'number', required: false },
         subscriptionId: { type: 'string', required: false },
@@ -46,9 +45,18 @@ export class GenerativeService {
         stream,
         method,
       },
+      // Return raw response for streaming to allow client-side stream handling
+      returnRawResponse: stream === true,
     };
 
-    const result = await this.sdk._fetch('/ai/generative/chat', 'POST', params);
+    // Force HTTP transport when streaming is enabled since NATS doesn't support streaming responses
+    const forceFetch = stream === true;
+    const result = await this.sdk._fetch(
+      '/ai/generative/chat',
+      'POST',
+      params,
+      forceFetch,
+    );
     return result;
   }
 
@@ -135,12 +143,17 @@ export class GenerativeService {
         stream,
         method,
       },
+      // Return raw response for streaming to allow client-side stream handling
+      returnRawResponse: stream === true,
     };
 
+    // Force HTTP transport when streaming is enabled since NATS doesn't support streaming responses
+    const forceFetch = stream === true;
     const result = await this.sdk._fetch(
       '/ai/generative/ollama',
       'POST',
       params,
+      forceFetch,
     );
     return result;
   }
