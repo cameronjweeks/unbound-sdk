@@ -139,7 +139,11 @@ export class EngagementMetricsService {
    * @param {string[]} [options.userIds] - Array of user IDs to filter by
    * @returns {Promise<Object>} All metrics
    */
-  async getDashboardMetrics({ queueIds = [], statuses = [], userIds = [] } = {}) {
+  async getDashboardMetrics({
+    queueIds = [],
+    statuses = [],
+    userIds = [],
+  } = {}) {
     return this.getMetrics({
       queueIds,
       statuses,

@@ -1,0 +1,184 @@
+syntax = "proto3";
+
+package transcription;
+
+// Transcription Service Definition
+service TranscriptionService {
+  // Bidirectional streaming for real-time transcription
+  // Client streams audio chunks, server streams back transcription results
+  rpc StreamTranscribe(stream AudioRequest) returns (stream TranscriptResponse);
+
+  // Get transcription session status
+  rpc GetSessionStatus(SessionStatusRequest) returns (SessionStatusResponse);
+}
+
+// Audio streaming request message
+message AudioRequest {
+  // Audio data chunk (raw bytes)
+  bytes audio_chunk = 1;
+
+  // Session ID for this transcription session
+  string session_id = 2;
+
+  // Authentication token
+  string token = 3;
+
+  // Language code (optional, will auto-detect if not provided)
+  // Examples: "en", "es", "fr", "de", "ja", "zh"
+  string language = 4;
+
+  // Transcription engine to use
+  // Options: "whisper", "google"
+  string engine = 5;
+
+  // Audio configuration
+  AudioConfig config = 6;
+
+  // Flag to indicate this is the first chunk
+  bool is_first_chunk = 7;
+
+  // Flag to indicate this is the last chunk
+  bool is_last_chunk = 8;
+
+  // SIP call identifier (required for multi-stream support)
+  // Used to identify which call this audio belongs to
+  string sip_call_id = 9;
+
+  // Audio stream side (required for multi-stream support)
+  // Options: "send" (outgoing), "recv" (incoming)
+  string side = 10;
+
+  // Speaker role (optional)
+  // Examples: "customer", "agent", "system"
+  string role = 11;
+
+  // VAD event type (optional - sent by media manager for speech detection)
+  // Options: "speaking_started", "speaking_stopped"
+  // When provided, this is a VAD event (not audio data)
+  string vad_event = 12;
+
+  // VAD event energy level (for speaking_started events)
+  double vad_energy = 13;
+
+  // VAD event speech duration in ms (for speaking_stopped events)
+  int64 vad_duration = 14;
+
+  // VAD event timestamp
+  int64 vad_timestamp = 15;
+}
+
+// Audio configuration
+message AudioConfig {
+  // Audio encoding format
+  // Examples: "LINEAR16", "FLAC", "MP3", "OGG_OPUS", "WEBM_OPUS"
+  string encoding = 1;
+
+  // Sample rate in Hertz
+  // Recommended: 16000 for most cases
+  int32 sample_rate_hertz = 2;
+
+  // Number of audio channels
+  // Mono = 1, Stereo = 2
+  int32 audio_channel_count = 3;
+
+  // Language code (deprecated, use AudioRequest.language instead)
+  string language_code = 4;
+
+  // Voice Activity Detection (VAD) configuration
+  // Enable VAD to filter out silence and improve transcription quality
+  bool vad_enabled = 5;
+
+  // Minimum silence duration in milliseconds to split segments
+  // Typical values: 300ms (fast, live calls) to 700ms (accurate, voicemails)
+  // Default: 500ms
+  int32 min_silence_duration_ms = 6;
+
+  // Padding around speech segments in milliseconds
+  // Adds context before/after detected speech
+  // Default: 400ms
+  int32 speech_pad_ms = 7;
+}
+
+// Transcription response message
+message TranscriptResponse {
+  // Transcribed text
+  string transcript = 1;
+
+  // Confidence score (0.0 to 1.0)
+  float confidence = 2;
+
+  // Whether this is a final result or interim
+  bool is_final = 3;
+
+  // Detected or specified language
+  string language = 4;
+
+  // Timestamp of this result (milliseconds since epoch)
+  int64 timestamp = 5;
+
+  // Word-level details (optional)
+  repeated WordInfo words = 6;
+
+  // Start time of this segment (seconds)
+  float start_time = 7;
+
+  // End time of this segment (seconds)
+  float end_time = 8;
+
+  // SIP call identifier (echoed back from AudioRequest)
+  string sip_call_id = 9;
+
+  // Audio stream side (echoed back from AudioRequest)
+  string side = 10;
+
+  // Speaker role (echoed back from AudioRequest)
+  string role = 11;
+}
+
+// Word-level information
+message WordInfo {
+  // The word text
+  string word = 1;
+
+  // Start time of the word (seconds)
+  float start_time = 2;
+
+  // End time of the word (seconds)
+  float end_time = 3;
+
+  // Confidence score for this word (0.0 to 1.0)
+  float confidence = 4;
+}
+
+// Session status request
+message SessionStatusRequest {
+  // Session ID to query
+  string session_id = 1;
+
+  // Authentication token
+  string token = 2;
+}
+
+// Session status response
+message SessionStatusResponse {
+  // Session ID
+  string session_id = 1;
+
+  // Session status: "active", "completed", "failed", "not_found"
+  string status = 2;
+
+  // Detected or specified language
+  string language = 3;
+
+  // Engine being used
+  string engine = 4;
+
+  // Session start time (milliseconds since epoch)
+  int64 start_time = 5;
+
+  // Total chunks processed
+  int32 total_chunks = 6;
+
+  // Error message (if status is "failed")
+  string error = 7;
+}

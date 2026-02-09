@@ -24,6 +24,7 @@ import { PhoneNumbersService } from './services/phoneNumbers.js';
 import { RecordTypesService } from './services/recordTypes.js';
 import { GenerateIdService } from './services/generateId.js';
 import { EngagementMetricsService } from './services/engagementMetrics.js';
+import { TaskRouterService } from './services/taskRouter.js';
 
 class UnboundSDK extends BaseSDK {
   constructor(options = {}) {
@@ -89,6 +90,7 @@ class UnboundSDK extends BaseSDK {
     this.recordTypes = new RecordTypesService(this);
     this.generateId = new GenerateIdService(this);
     this.engagementMetrics = new EngagementMetricsService(this);
+    this.taskRouter = new TaskRouterService(this);
 
     // Add additional services that might be missing
     this._initializeAdditionalServices();
@@ -178,9 +180,10 @@ class UnboundSDK extends BaseSDK {
         if (typeof response.json === 'function') {
           healthData = await response.json();
         } else if (response.body) {
-          healthData = typeof response.body === 'string'
-            ? JSON.parse(response.body)
-            : response.body;
+          healthData =
+            typeof response.body === 'string'
+              ? JSON.parse(response.body)
+              : response.body;
         } else {
           healthData = {};
         }
@@ -210,6 +213,18 @@ class UnboundSDK extends BaseSDK {
         statusCode: error.status || null,
       };
     }
+  }
+
+  /**
+   * Get the client's IP address
+   * Always uses fetch transport (never WebSocket or other transports)
+   *
+   * @returns {Promise<Object>} Response with:
+   *   - ip: string - The client's IP address
+   */
+  async getIp() {
+    // Force fetch transport (pass true as forceFetch parameter)
+    return await this._fetch('/get-ip', 'GET', {}, true);
   }
 }
 
@@ -251,4 +266,6 @@ export {
 } from './services/recordTypes.js';
 export { GenerateIdService } from './services/generateId.js';
 export { EngagementMetricsService } from './services/engagementMetrics.js';
+export { TaskRouterService } from './services/taskRouter.js';
+export { WorkerService } from './services/taskRouter/WorkerService.js';
 export { BaseSDK } from './base.js';

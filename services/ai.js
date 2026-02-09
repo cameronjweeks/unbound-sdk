@@ -3,6 +3,8 @@ export class AIService {
     this.sdk = sdk;
     this.generative = new GenerativeService(sdk);
     this.tts = new TextToSpeechService(sdk);
+    this.stt = new SpeechToTextService(sdk);
+    this.extract = new ExtractService(sdk);
   }
 }
 
@@ -14,36 +16,56 @@ export class GenerativeService {
   async chat({
     prompt,
     messages,
+    systemPrompt,
     relatedId,
+    provider,
     model,
     temperature,
     subscriptionId,
     stream,
-    method,
+    isPlayground = false,
+    responseFormat,
   }) {
     this.sdk.validateParams(
-      { method, stream, temperature, subscriptionId, model, prompt, messages },
+      {
+        stream,
+        temperature,
+        subscriptionId,
+        provider,
+        model,
+        prompt,
+        messages,
+        systemPrompt,
+        isPlayground,
+        responseFormat,
+      },
       {
         prompt: { type: 'string', required: false },
         messages: { type: 'array', required: false },
+        systemPrompt: { type: 'string', required: false },
+        provider: { type: 'string', required: false },
         model: { type: 'string', required: false },
         temperature: { type: 'number', required: false },
         subscriptionId: { type: 'string', required: false },
         stream: { type: 'boolean', required: false },
-        method: { type: 'string', required: true },
+        isPlayground: { type: 'boolean', required: false },
+        responseFormat: { type: 'object', required: false },
       },
     );
 
     const params = {
       body: {
+        isPlayground,
         prompt,
         messages,
+        systemPrompt,
         relatedId,
+        provider,
         model,
         temperature,
         subscriptionId,
         stream,
-        method,
+        responseFormat,
       },
       // Return raw response for streaming to allow client-side stream handling
       returnRawResponse: stream === true,
@@ -108,55 +130,55 @@ export class GenerativeService {
     return result;
   }
 
-  async chatOllama({
-    prompt,
-    messages,
-    relatedId,
-    model,
-    temperature,
-    subscriptionId,
-    stream,
-    method,
-  }) {
-    this.sdk.validateParams(
-      { method },
-      {
-        prompt: { type: 'string', required: false },
-        messages: { type: 'array', required: false },
-        relatedId: { type: 'string', required: false },
-        model: { type: 'string', required: false },
-        temperature: { type: 'number', required: false },
-        subscriptionId: { type: 'string', required: false },
-        stream: { type: 'boolean', required: false },
-        method: { type: 'string', required: true },
-      },
-    );
+  // async chatOllama({
+  //   prompt,
+  //   messages,
+  //   relatedId,
+  //   model,
+  //   temperature,
+  //   subscriptionId,
+  //   stream,
+  //   method,
+  // }) {
+  //   this.sdk.validateParams(
+  //     { method },
+  //     {
+  //       prompt: { type: 'string', required: false },
+  //       messages: { type: 'array', required: false },
+  //       relatedId: { type: 'string', required: false },
+  //       model: { type: 'string', required: false },
+  //       temperature: { type: 'number', required: false },
+  //       subscriptionId: { type: 'string', required: false },
+  //       stream: { type: 'boolean', required: false },
+  //       method: { type: 'string', required: true },
+  //     },
+  //   );
 
-    const params = {
-      body: {
-        prompt,
-        messages,
-        relatedId,
-        model,
-        temperature,
-        subscriptionId,
-        stream,
-        method,
-      },
-      // Return raw response for streaming to allow client-side stream handling
-      returnRawResponse: stream === true,
-    };
+  //   const params = {
+  //     body: {
+  //       prompt,
+  //       messages,
+  //       relatedId,
+  //       model,
+  //       temperature,
+  //       subscriptionId,
+  //       stream,
+  //       method,
+  //     },
+  //     // Return raw response for streaming to allow client-side stream handling
+  //     returnRawResponse: stream === true,
+  //   };
 
-    // Force HTTP transport when streaming is enabled since NATS doesn't support streaming responses
-    const forceFetch = stream === true;
-    const result = await this.sdk._fetch(
-      '/ai/generative/ollama',
-      'POST',
-      params,
-      forceFetch,
-    );
-    return result;
-  }
+  //   // Force HTTP transport when streaming is enabled since NATS doesn't support streaming responses
+  //   const forceFetch = stream === true;
+  //   const result = await this.sdk._fetch(
+  //     '/ai/generative/ollama',
+  //     'POST',
+  //     params,
+  //     forceFetch,
+  //   );
+  //   return result;
+  // }
 }
 
 export class TextToSpeechService {
@@ -174,9 +196,21 @@ export class TextToSpeechService {
     pitch,
     volumeGainDb,
     effectsProfileIds,
+    createAccessKey,
   }) {
     this.sdk.validateParams(
-      { text },
+      {
+        text,
+        voice,
+        languageCode,
+        ssmlGender,
+        audioEncoding,
+        speakingRate,
+        pitch,
+        volumeGainDb,
+        effectsProfileIds,
+        createAccessKey,
+      },
       {
         text: { type: 'string', required: true },
         voice: { type: 'string', required: false },
@@ -187,6 +221,7 @@ export class TextToSpeechService {
         pitch: { type: 'number', required: false },
         volumeGainDb: { type: 'number', required: false },
         effectsProfileIds: { type: 'array', required: false },
+        createAccessKey: { type: 'boolean', required: false },
       },
     );
 
@@ -199,12 +234,654 @@ export class TextToSpeechService {
     if (pitch) ttsData.pitch = pitch;
     if (volumeGainDb) ttsData.volumeGainDb = volumeGainDb;
     if (effectsProfileIds) ttsData.effectsProfileIds = effectsProfileIds;
+    if (createAccessKey) ttsData.createAccessKey = createAccessKey;
 
     const params = {
       body: ttsData,
     };
 
     const result = await this.sdk._fetch('/ai/tts', 'POST', params);
+    return result;
+  }
+
+  /**
+   * List available TTS voices
+   * @returns {Promise<Object>} { voices: Array, count: number, supportedEncodings: Array, supportedLanguages: Array }
+   */
+  async list() {
+    const result = await this.sdk._fetch('/ai/tts', 'GET');
+    return result;
+  }
+}
+
+export class SpeechToTextService {
+  constructor(sdk) {
+    this.sdk = sdk;
+  }
+
+  /**
+   * Create a transcription from file or storage
+   * @param {Object} options - Transcription options
+   * @param {string} options.sourceType - 'file', 'storage', 'stream', or 'url'
+   * @param {string} [options.sourceId] - Source identifier
+   * @param {string} [options.storageId] - Storage ID if using storage
+   * @param {string} [options.engine='google'] - STT engine ('google', 'deepgram', 'whisper')
+   * @param {string} [options.languageCode='en-US'] - BCP-47 language code
+   * @param {Object} [options.metadata] - Engine-specific configuration
+   * @param {string} [options.engagementSessionId] - Engagement session ID
+   * @param {string} [options.playbookId] - Playbook ID
+   * @param {string} [options.name] - Transcription name
+   * @param {string} [options.role] - Speaker role
+   * @param {string} [options.direction] - Call direction
+   * @returns {Promise<Object>} Transcription result
+   */
+  async create({
+    sourceType,
+    sourceId,
+    sipCallId,
+    cdrId,
+    storageId,
+    engine,
+    languageCode,
+    metadata,
+    engagementSessionId,
+    playbookId,
+    name,
+    role,
+    direction,
+  }) {
+    this.sdk.validateParams(
+      {
+        sourceType,
+        sourceId,
+        sipCallId,
+        cdrId,
+        storageId,
+        engine,
+        languageCode,
+        metadata,
+        engagementSessionId,
+        playbookId,
+        name,
+        role,
+        direction,
+      },
+      {
+        sourceType: { type: 'string', required: true },
+        sourceId: { type: 'string', required: false },
+        sipCallId: { type: 'string', required: false },
+        cdrId: { type: 'string', required: false },
+        storageId: { type: 'string', required: false },
+        engine: { type: 'string', required: false },
+        languageCode: { type: 'string', required: false },
+        metadata: { type: 'object', required: false },
+        engagementSessionId: { type: 'string', required: false },
+        playbookId: { type: 'string', required: false },
+        name: { type: 'string', required: false },
+        role: { type: 'string', required: false },
+        direction: { type: 'string', required: false },
+      },
+    );
+
+    const params = {
+      body: {
+        sourceType,
+        sourceId,
+        sipCallId,
+        cdrId,
+        storageId,
+        engine,
+        languageCode,
+        metadata,
+        engagementSessionId,
+        playbookId,
+        name,
+        role,
+        direction,
+      },
+    };
+
+    const result = await this.sdk._fetch('/ai/stt', 'POST', params);
+    return result;
+  }
+
+  /**
+   * Create a real-time streaming transcription session
+   * Returns an EventEmitter-based stream for sending audio and receiving transcripts
+   *
+   * @param {Object} options - Stream options
+   * @param {string} [options.engine='google'] - STT engine ('google' or 'whisper')
+   * @param {string} [options.model] - STT model (e.g., 'phone_call' for Google)
+   * @param {string} [options.languageCode='en-US'] - BCP-47 language code
+   * @param {string} [options.encoding='LINEAR16'] - Audio encoding format
+   * @param {number} [options.sampleRateHertz=16000] - Sample rate in Hertz
+   * @param {number} [options.audioChannelCount=1] - Number of audio channels (1=mono, 2=stereo)
+   * @param {boolean} [options.singleUtterance=false] - Stop after first utterance
+   * @param {boolean} [options.interimResults=true] - Return interim results
+   * @param {boolean} [options.enableAutomaticPunctuation=true] - Enable automatic punctuation
+   * @param {boolean} [options.diarizationEnabled=false] - Enable speaker diarization
+   * @param {number} [options.speakerCount] - Number of speakers (if diarization enabled)
+   * @param {boolean} [options.vadEnabled=false] - Enable Voice Activity Detection
+   * @param {number} [options.minSilenceDuration=500] - Min silence duration in ms (for VAD)
+   * @param {number} [options.speechPadMs=400] - Speech padding in ms (for VAD)
+   * @param {string} [options.engagementSessionId] - Engagement session ID
+   * @param {string} [options.playbookId] - Playbook ID
+   * @param {string} [options.name] - Session name
+   * @param {Object} [options.metadata] - Additional metadata
+   * @returns {Promise<SttStream>} Stream object with write() method and transcript events
+   *
+   * @example
+   * const stream = await sdk.ai.stt.stream({ engine: 'google', languageCode: 'en-US' });
+   * stream.on('transcript', (result) => console.log(result.text, result.isFinal));
+   * stream.on('error', (error) => console.error(error));
+   * stream.on('close', () => console.log('Stream closed'));
+   * stream.write(audioChunk);
+   * stream.end();
+   */
+  async stream(options = {}) {
+    // Environment check - STT streaming only works in Node.js
+    if (this.sdk.environment !== 'node') {
+      throw new Error(
+        'STT streaming requires Node.js environment. ' +
+          'This feature is only available in backend services. ' +
+          'Browser-based streaming is not supported.',
+      );
+    }
+
+    const {
+      engine = 'google',
+      model,
+      languageCode = 'en-US',
+      encoding = 'LINEAR16',
+      sampleRateHertz = 16000,
+      audioChannelCount = 1,
+      singleUtterance = false,
+      interimResults = true,
+      enableAutomaticPunctuation = true,
+      diarizationEnabled = false,
+      speakerCount,
+      vadEnabled = false,
+      minSilenceDuration = 500,
+      speechPadMs = 400,
+      engagementSessionId,
+      playbookId,
+      name,
+      metadata,
+      sipCallId,
+      cdrId,
+    } = options;
+
+    // Validate parameters
+    this.sdk.validateParams(
+      {
+        engine,
+        model,
+        languageCode,
+        encoding,
+        sampleRateHertz,
+        audioChannelCount,
+        singleUtterance,
+        interimResults,
+        enableAutomaticPunctuation,
+        diarizationEnabled,
+        speakerCount,
+        vadEnabled,
+        minSilenceDuration,
+        speechPadMs,
+        engagementSessionId,
+        playbookId,
+        name,
+        metadata,
+        sipCallId,
+        cdrId,
+      },
+      {
+        engine: { type: 'string', required: false },
+        model: { type: 'string', required: false },
+        languageCode: { type: 'string', required: false },
+        encoding: { type: 'string', required: false },
+        sampleRateHertz: { type: 'number', required: false },
+        audioChannelCount: { type: 'number', required: false },
+        singleUtterance: { type: 'boolean', required: false },
+        interimResults: { type: 'boolean', required: false },
+        enableAutomaticPunctuation: { type: 'boolean', required: false },
+        diarizationEnabled: { type: 'boolean', required: false },
+        speakerCount: { type: 'number', required: false },
+        vadEnabled: { type: 'boolean', required: false },
+        minSilenceDuration: { type: 'number', required: false },
+        speechPadMs: { type: 'number', required: false },
+        engagementSessionId: { type: 'string', required: false },
+        playbookId: { type: 'string', required: false },
+        name: { type: 'string', required: false },
+        metadata: { type: 'object', required: false },
+        sipCallId: { type: 'string', required: false },
+        cdrId: { type: 'string', required: false },
+      },
+    );
+
+    // Create session via API
+    const sessionParams = {
+      body: {
+        engine,
+        model,
+        engagementSessionId,
+        playbookId,
+        sipCallId,
+        cdrId,
+        name,
+        metadata: {
+          ...metadata,
+          languageCode,
+          encoding,
+          sampleRateHertz,
+          audioChannelCount,
+          singleUtterance,
+          interimResults,
+          enableAutomaticPunctuation,
+          diarizationEnabled,
+          speakerCount,
+          vadEnabled,
+          minSilenceDuration,
+          speechPadMs,
+        },
+      },
+    };
+
+    const session = await this.sdk._fetch(
+      '/ai/stt/stream',
+      'POST',
+      sessionParams,
+    );
+
+    // Dynamic import of SttStream (only loads when needed)
+    const { SttStream } = await import('./ai/SttStream.js');
+
+    // Create and return stream instance
+    const streamOptions = {
+      ...options,
+      languageCode,
+      encoding,
+      sampleRateHertz,
+      audioChannelCount,
+      vadEnabled,
+      minSilenceDuration,
+      speechPadMs,
+    };
+
+    return new SttStream(this.sdk, session, streamOptions);
+  }
+
+  /**
+   * Get a transcription by ID
+   * @param {string} id - Transcription ID
+   * @param {Object} [options] - Retrieval options
+   * @param {boolean} [options.includeMessages=true] - Include transcription messages
+   * @returns {Promise<Object>} Transcription data
+   */
+  async get(id, { includeMessages = true } = {}) {
+    this.sdk.validateParams(
+      { id },
+      {
+        id: { type: 'string', required: true },
+        includeMessages: { type: 'boolean', required: false },
+      },
+    );
+
+    const params = {
+      query: { includeMessages: includeMessages.toString() },
+    };
+
+    const result = await this.sdk._fetch(`/ai/stt/${id}`, 'GET', params);
+    return result;
+  }
+
+  /**
+   * List transcriptions with filters
+   * @param {Object} [filters] - Filter options
+   * @param {string} [filters.engagementSessionId] - Filter by engagement session
+   * @param {string} [filters.userId] - Filter by user
+   * @param {string} [filters.status] - Filter by status
+   * @param {string} [filters.engine] - Filter by engine
+   * @param {string} [filters.sourceType] - Filter by source type
+   * @param {string} [filters.playbookId] - Filter by playbook
+   * @param {string} [filters.startDate] - Filter by start date
+   * @param {string} [filters.endDate] - Filter by end date
+   * @param {number} [filters.limit=50] - Limit results
+   * @param {number} [filters.offset=0] - Offset for pagination
+   * @returns {Promise<Object>} List of transcriptions
+   */
+  async list(filters = {}) {
+    this.sdk.validateParams(filters, {
+      engagementSessionId: { type: 'string', required: false },
+      userId: { type: 'string', required: false },
+      status: { type: 'string', required: false },
+      engine: { type: 'string', required: false },
+      sourceType: { type: 'string', required: false },
+      playbookId: { type: 'string', required: false },
+      startDate: { type: 'string', required: false },
+      endDate: { type: 'string', required: false },
+      limit: { type: 'number', required: false },
+      offset: { type: 'number', required: false },
+    });
+
+    const params = {
+      query: filters,
+    };
+
+    const result = await this.sdk._fetch('/ai/stt', 'GET', params);
+    return result;
+  }
+
+  /**
+   * Log a transcription message for a streaming session
+   * @param {string} sessionId - Transcription session ID
+   * @param {string} messageId - message id for the transcription
+   * @param {number} timestamp - message timestamp (unix)
+   * @param {Object} message - Message data
+   * @param {string} message.text - Transcribed text
+   * @param {Object} [message.transcriptionJson] - Full transcription metadata
+   * @param {number} [message.duration] - Duration of this segment in seconds
+   * @param {number} [message.confidence] - Confidence score (0-1)
+   * @param {string} [message.languageCode] - Language code for this segment
+   * @param {string} [message.userId] - User associated with this message
+   * @param {string} [message.role] - Speaker role
+   * @param {string} [message.sipCallId] - SIP call identifier
+   * @param {string} [message.side] - Stream side ('send' or 'recv')
+   * @returns {Promise<Object>} Created message result
+   */
+  async logMessage(
+    sessionId,
+    {
+      messageId,
+      timestamp,
+      text,
+      transcriptionJson,
+      duration,
+      confidence,
+      languageCode,
+      userId,
+      role,
+      sipCallId,
+      side,
+    },
+  ) {
+    this.sdk.validateParams(
+      { messageId, sessionId, text },
+      {
+        sessionId: { type: 'string', required: true },
+        messageId: { type: 'string', required: false },
+        timestamp: { type: 'number', required: false },
+        text: { type: 'string', required: true },
+        transcriptionJson: { type: 'object', required: false },
+        duration: { type: 'number', required: false },
+        confidence: { type: 'number', required: false },
+        languageCode: { type: 'string', required: false },
+        userId: { type: 'string', required: false },
+        role: { type: 'string', required: false },
+        sipCallId: { type: 'string', required: false },
+        side: { type: 'string', required: false },
+      },
+    );
+
+    const params = {
+      body: {
+        messageId,
+        timestamp,
+        text,
+        transcriptionJson,
+        duration,
+        confidence,
+        languageCode,
+        userId,
+        role,
+        sipCallId,
+        side,
+      },
+    };
+
+    const result = await this.sdk._fetch(
+      `/ai/stt/stream/${sessionId}/messages`,
+      'POST',
+      params,
+    );
+    return result;
+  }
+
+  /**
+   * Complete a streaming transcription session
+   * @param {string} sessionId - Transcription session ID
+   * @param {Object} [options] - Completion options
+   * @param {string} [options.status='completed'] - Final status ('completed' or 'failed')
+   * @param {string} [options.error] - Error message if status is 'failed'
+   * @returns {Promise<Object>} Completion result
+   */
+  async complete(sessionId, { status = 'completed', error } = {}) {
+    this.sdk.validateParams(
+      { sessionId },
+      {
+        sessionId: { type: 'string', required: true },
+        status: { type: 'string', required: false },
+        error: { type: 'string', required: false },
+      },
+    );
+
+    const params = {
+      body: { status, error },
+    };
+
+    const result = await this.sdk._fetch(
+      `/ai/stt/stream/${sessionId}/complete`,
+      'PUT',
+      params,
+    );
+    return result;
+  }
+}
+
+// STT Constants
+export const STT = {
+  ENGINES: {
+    GOOGLE: 'google',
+    DEEPGRAM: 'deepgram',
+    WHISPER: 'whisper',
+  },
+  SOURCE_TYPES: {
+    FILE: 'file',
+    STORAGE: 'storage',
+    STREAM: 'stream',
+    URL: 'url',
+  },
+  STATUS: {
+    PENDING: 'pending',
+    PROCESSING: 'processing',
+    COMPLETED: 'completed',
+    FAILED: 'failed',
+  },
+  LANGUAGES: {
+    EN_US: 'en-US',
+    EN_GB: 'en-GB',
+    EN_AU: 'en-AU',
+    ES_ES: 'es-ES',
+    ES_MX: 'es-MX',
+    ES_US: 'es-US',
+    FR_FR: 'fr-FR',
+    FR_CA: 'fr-CA',
+    DE_DE: 'de-DE',
+    IT_IT: 'it-IT',
+    PT_BR: 'pt-BR',
+    PT_PT: 'pt-PT',
+    ZH_CN: 'zh-CN',
+    JA_JP: 'ja-JP',
+    KO_KR: 'ko-KR',
+  },
+};
+
+export class ExtractService {
+  constructor(sdk) {
+    this.sdk = sdk;
+  }
+
+  /**
+   * Extract phone number from text
+   * @param {Object} options - Extraction options
+   * @param {string} options.value - Text containing phone number
+   * @param {string} [options.country='US'] - Country code for validation
+   * @param {string} [options.format='E164'] - Output format: 'E164', 'national', 'international'
+   * @returns {Promise<Object>} { isValid, parsedValue, confidence, metadata: { country, type, nationalNumber, ... } }
+   */
+  async phone({ value, country = 'US', format = 'E164' }) {
+    return this._extract('phone', value, { country, format });
+  }
+
+  /**
+   * Extract email address from text
+   * @param {Object} options - Extraction options
+   * @param {string} options.value - Text containing email
+   * @returns {Promise<Object>} { isValid, parsedValue, confidence, metadata: { domain } }
+   */
+  async email({ value }) {
+    return this._extract('email', value);
+  }
+
+  /**
+   * Extract physical address from text
+   * @param {Object} options - Extraction options
+   * @param {string} options.value - Text containing address
+   * @param {boolean} [options.useAI=false] - Use AI for better extraction from conversational text
+   * @returns {Promise<Object>} { isValid, parsedValue, confidence, metadata: { components } }
+   */
+  async address({ value, useAI = false }) {
+    return this._extract('address', value, { useAI });
+  }
+
+  /**
+   * Extract person's name from text
+   * @param {Object} options - Extraction options
+   * @param {string} options.value - Text containing name
+   * @param {boolean} [options.useAI=true] - Use AI for extraction from conversational text
+   * @returns {Promise<Object>} { isValid, parsedValue, firstName, lastName, title }
+   */
+  async personName({ value, useAI = true }) {
+    return this._extract('personName', value, { useAI });
+  }
+
+  /**
+   * Extract and validate credit card number (masked for security)
+   * @param {Object} options - Extraction options
+   * @param {string} options.value - Text containing credit card
+   * @param {boolean} [options.maskOutput=true] - Mask all but last 4 digits
+   * @returns {Promise<Object>} { isValid, parsedValue (masked), confidence, metadata: { cardType, length } }
+   */
+  async creditCard({ value, maskOutput = true }) {
+    return this._extract('creditCard', value, { maskOutput });
+  }
+
+  /**
+   * Extract and validate SSN (masked for security)
+   * @param {Object} options - Extraction options
+   * @param {string} options.value - Text containing SSN
+   * @param {boolean} [options.maskOutput=true] - Mask all but last 4 digits
+   * @returns {Promise<Object>} { isValid, parsedValue (masked), confidence, metadata }
+   */
+  async ssn({ value, maskOutput = true }) {
+    return this._extract('ssn', value, { maskOutput });
+  }
+
+  /**
+   * Extract phone extension
+   * @param {Object} options - Extraction options
+   * @param {string} options.value - Text containing extension
+   * @param {number} [options.minLength=1] - Minimum digits
+   * @param {number} [options.maxLength=10] - Maximum digits
+   * @returns {Promise<Object>} { isValid, parsedValue, confidence }
+   */
+  async extension({ value, minLength = 1, maxLength = 10 }) {
+    return this._extract('extension', value, { minLength, maxLength });
+  }
+
+  /**
+   * Detect correct/incorrect response from natural language
+   * @param {Object} options - Extraction options
+   * @param {string} options.value - User's response (e.g., "yes", "no", "correct", "nope")
+   * @returns {Promise<Object>} { isValid, parsedValue: 'correct'|'incorrect', booleanValue: true|false }
+   */
+  async correctIncorrect({ value }) {
+    return this._extract('correctIncorrect', value);
+  }
+
+  /**
+   * Extract using custom regex pattern
+   * @param {Object} options - Extraction options
+   * @param {string} options.value - Text to match against
+   * @param {string} options.pattern - Regex pattern
+   * @param {number} [options.maxLength] - Maximum length of extracted value
+   * @param {string} [options.flags='g'] - Regex flags
+   * @param {boolean} [options.replaceNumbers=true] - Convert number words to digits first
+   * @returns {Promise<Object>} { isValid, parsedValue, originalValue, processedValue }
+   */
+  async regex({
+    value,
+    pattern,
+    maxLength,
+    flags = 'g',
+    replaceNumbers = true,
+  }) {
+    return this._extract('regex', value, {
+      pattern,
+      maxLength,
+      flags,
+      replaceNumbers,
+    });
+  }
+
+  /**
+   * Detect intent response from natural language
+   * @param {Object} options - Extraction options
+   * @param {string} options.value - User's response (e.g., "I need help with my invoice")
+   * @param {Object} options.params.question - The Question posed to the user to answer
+   * @param {Object} options.params.validOptions - An array of objects with the valid intents
+   *
+   * @returns {Promise<Object>} { isValid, value: 'Billing',  }
+   */
+  async intent({ value, params }) {
+    return this._extract('intent', value, params);
+  }
+
+  /**
+   * Extract ALL entities from text (phone, email, address, name, etc.)
+   * @param {Object} options - Extraction options
+   * @param {string} options.value - Text to extract from
+   * @param {array} [options.types] - Array of strings of the types you want to find ('correctIncorrect', 'phone', 'email', 'address', 'personName', 'extension', 'creditCard', 'ssn'). If not provided, all types will be extracted.
+   * @param {string} [options.question] - The original question that was asked to the user. Providing this context significantly improves extraction accuracy by helping the AI understand what data entities to look for.
+   * @returns {Promise<Object>} { isValid, extractions: [{ type, value, ...metadata }], metadata }
+   */
+  async all({ value, types = [], question }) {
+    const params = {
+      types,
+      question,
+    };
+    return this._extract('all', value, params);
+  }
+
+  // Internal method
+  async _extract(type, value, params = {}) {
+    this.sdk.validateParams(
+      { type, value },
+      {
+        type: { type: 'string', required: true },
+        value: { type: 'string', required: true },
+      },
+    );
+
+    const requestParams = {
+      body: {
+        type,
+        value,
+        params,
+      },
+    };
+
+    const result = await this.sdk._fetch('/ai/extract', 'POST', requestParams);
     return result;
   }
 }

@@ -41,6 +41,7 @@
     "services/**/*.js",
     "transports/**/*.js",
     "types/**/*.d.ts",
+    "proto/**/*.proto",
     "README.md",
     "LICENSE"
   ],
@@ -64,7 +65,9 @@
   },
   "dependencies": {},
   "optionalDependencies": {
-    "mime-types": "^2.1.35"
+    "mime-types": "^2.1.35",
+    "@grpc/grpc-js": "^1.14.1",
+    "@grpc/proto-loader": "^0.7.15"
   },
   "peerDependencies": {
     "socket.io-client": "^4.0.0"

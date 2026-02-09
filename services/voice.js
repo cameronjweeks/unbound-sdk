@@ -3,71 +3,150 @@ export class VoiceService {
     this.sdk = sdk;
   }
 
-  async call({
-    to,
-    from,
-    callerIdName,
-    callerIdNumber,
-    timeout,
-    confirmAnswer,
-    app,
-    variables,
-    engagementSessionId,
-    voiceChannelId,
-    serverId,
-  }) {
+  async record({ cdrId, callId, action = 'start', direction = 'sendrecv' }) {
     this.sdk.validateParams(
-      {},
+      { callId, cdrId, action, direction },
       {
-        to: { type: 'string', required: false },
-        from: { type: 'string', required: false },
-        callerIdName: { type: 'string', required: false },
-        callerIdNumber: { type: 'string', required: false },
-        timeout: { type: 'number', required: false },
-        confirmAnswer: { type: 'boolean', required: false },
-        app: { type: 'object', required: false },
-        variables: { type: 'object', required: false },
-        engagementSessionId: { type: 'string', required: false },
-        voiceChannelId: { type: 'string', required: false },
-        serverId: { type: 'string', required: false },
+        cdrId: { type: 'string', required: false },
+        callId: { type: 'string', required: false },
+        action: { type: 'string', required: false },
+        direction: { type: 'string', required: false },
       },
     );
-
-    const callData = {};
-    if (to) callData.to = to;
-    if (from) callData.from = from;
-    if (callerIdName) callData.callerIdName = callerIdName;
-    if (callerIdNumber) callData.callerIdNumber = callerIdNumber;
-    if (timeout !== undefined) callData.timeout = timeout;
-    if (confirmAnswer !== undefined) callData.confirmAnswer = confirmAnswer;
-    if (app) callData.app = app;
-    if (variables) callData.variables = variables;
-    if (engagementSessionId) callData.engagementSessionId = engagementSessionId;
-    if (voiceChannelId) callData.voiceChannelId = voiceChannelId;
-    if (serverId) callData.serverId = serverId;
 
     const params = {
-      body: callData,
+      body: { callId, cdrId, action, direction },
     };
 
-    const result = await this.sdk._fetch('/voice/calls', 'POST', params);
+    const result = await this.sdk._fetch(`/voice/record/`, 'POST', params);
     return result;
   }
 
-  async hangup(voiceChannelId) {
+  async call({ to, from, destination, app, timeout, customHeaders }) {
     this.sdk.validateParams(
-      { voiceChannelId },
+      { to, from, destination, app, timeout, customHeaders },
       {
-        voiceChannelId: { type: 'string', required: true },
+        to: { type: 'string', required: true },
+        from: { type: 'string', required: true },
+        destination: { type: 'string', required: false },
+        app: { type: 'object', required: false },
+        timeout: { type: 'number', required: false },
+        customHeaders: { type: 'object', required: false },
       },
     );
 
-    const result = await this.sdk._fetch(
-      `/voice/calls/${voiceChannelId}`,
-      'DELETE',
-    );
+    const params = {
+      body: {
+        to,
+        from,
+        destination,
+        app,
+        timeout,
+        customHeaders,
+      },
+    };
+
+    const result = await this.sdk._fetch('/voice/', 'POST', params);
     return result;
   }
+
+  /**
+   * Replace the voice application on an active call
+   * Dynamically updates the voice app running on a call, allowing you to change the call flow in real-time.
+   * This can be used to play new audio, gather input, or execute any other voice commands while the call is active.
+   *
+   * @param {Object} options - Parameters
+   * @param {string} options.callId - The call ID to replace the app for (required)
+   * @param {Object} options.app - The voice app object containing commands to execute (required)
+   * @param {string} options.app.version - Voice app version (e.g., '2.0')
+   * @param {string} options.app.name - Voice app name identifier
+   * @param {Array} options.app.commands - Array of command objects to execute
+   * @returns {Promise<Object>} Object containing the operation status and metadata
+   * @returns {boolean} result.status - Whether the replacement was successful
+   * @returns {Object} result.meta - Metadata including the payload sent to media manager
+   *
+   * @example
+   * // Replace call app to play audio and hangup
+   * const result = await sdk.voice.replaceCallApp({
+   *   callId: 'call123',
+   *   app: {
+   *     version: '2.0',
+   *     name: 'dynamic-app',
+   *     commands: [
+   *       { command: 'play', file: 'example.wav' },
+   *       { command: 'hangup' }
+   *     ]
+   *   }
+   * });
+   * console.log(result.status); // true
+   *
+   * @example
+   * // Replace call app to gather input
+   * const result = await sdk.voice.replaceCallApp({
+   *   callId: 'call456',
+   *   app: {
+   *     version: '2.0',
+   *     name: 'gather-app',
+   *     commands: [
+   *       { command: 'play', file: 'prompt.wav' },
+   *       { command: 'gather', numDigits: 1, timeout: 5 }
+   *     ]
+   *   }
+   * });
+   */
+  async replaceCallApp({ callId, app }) {
+    this.sdk.validateParams(
+      { callId, app },
+      {
+        callId: { type: 'string', required: true },
+        app: { type: 'object', required: true },
+      },
+    );
+
+    const params = {
+      body: {
+        callId,
+        app,
+      },
+    };
+
+    const result = await this.sdk._fetch('/voice/replace', 'PUT', params);
+    return result;
+  }
+
+  /**
+   * HangUp active call
+   * Ends a currently active SIP phone call
+   *
+   * @param {string} callId - The call ID to hangup (required)
+   * @returns {Promise<Object>} Object containing the operation status and metadata
+   * @returns {boolean} result.status - Whether the replacement was successful
+   *
+   * @example
+   * // hangup call
+   * const result = await sdk.voice.hangup(callId);
+   * console.log(result.status); // true
+   *
+   */
+
+  async hangup(callId) {
+    this.sdk.validateParams(
+      { callId },
+      {
+        callId: { type: 'string', required: true },
+      },
+    );
+    const params = {
+      body: {
+        callId,
+      },
+    };
+
+    const result = await this.sdk._fetch(`/voice/hangup`, 'PUT', params);
+    return result;
+  }
+
+  /* legacy methods, to be updated and replaced */
 
   async hold(channels) {
     this.sdk.validateParams(
@@ -126,28 +205,6 @@ export class VoiceService {
 
     const result = await this.sdk._fetch(
       `/voice/calls/dtmf/${voiceChannelId}`,
-      'POST',
-      params,
-    );
-    return result;
-  }
-
-  async record(voiceChannelId, action = 'start', direction = 'both') {
-    this.sdk.validateParams(
-      { voiceChannelId },
-      {
-        voiceChannelId: { type: 'string', required: true },
-        action: { type: 'string', required: false },
-        direction: { type: 'string', required: false },
-      },
-    );
-
-    const params = {
-      body: { action, direction },
-    };
-
-    const result = await this.sdk._fetch(
-      `/voice/calls/record/${voiceChannelId}`,
       'POST',
       params,
     );

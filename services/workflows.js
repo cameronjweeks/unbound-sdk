@@ -21,6 +21,15 @@ export class WorkflowsService {
     const result = await this.sdk._fetch('/workflows/settings', 'GET', params);
     return result;
   }
+
+  async listModules() {
+    const params = {
+      query: {},
+    };
+
+    const result = await this.sdk._fetch('/workflows/modules', 'GET', params);
+    return result;
+  }
 }
 
 export class WorkflowItemsService {
@@ -288,11 +297,11 @@ export class WorkflowSessionsService {
     this.sdk = sdk;
   }
 
-  async create(workflowId, sessionData) {
+  async create(workflowVersionId, sessionData) {
     this.sdk.validateParams(
-      { workflowId, sessionData },
+      { workflowVersionId, sessionData },
       {
-        workflowId: { type: 'string', required: true },
+        workflowVersionId: { type: 'string', required: true },
         sessionData: { type: 'object', required: true },
       },
     );
@@ -302,7 +311,7 @@ export class WorkflowSessionsService {
     };
 
     const result = await this.sdk._fetch(
-      `/workflows/${workflowId}/sessions`,
+      `/workflows/session/${workflowVersionId}`,
       'POST',
       params,
     );
@@ -338,7 +347,25 @@ export class WorkflowSessionsService {
     };
 
     const result = await this.sdk._fetch(
-      `/workflows/sessions/${sessionId}`,
+      `/workflows/session/${sessionId}`,
+      'PUT',
+      params,
+    );
+    return result;
+  }
+
+  async complete(sessionId) {
+    this.sdk.validateParams(
+      { sessionId },
+      {
+        sessionId: { type: 'string', required: true },
+      },
+    );
+
+    const params = {};
+
+    const result = await this.sdk._fetch(
+      `/workflows/session/${sessionId}/complete`,
       'PUT',
       params,
     );

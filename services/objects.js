@@ -45,9 +45,13 @@ export class ObjectsService {
       }
     } else if (typeof arg1 === 'object') {
       id = arg1.id;
-      query = { ...arg1 };
-      if (query.id) {
-        delete query.id;
+      if (arg1.query) {
+        query = { ...arg1.query };
+      } else {
+        query = { ...arg1 };
+        if (query.id) {
+          delete query.id;
+        }
       }
     }
 
@@ -63,7 +67,9 @@ export class ObjectsService {
     );
 
     const params = { query };
+
     const result = await this.sdk._fetch(`/object/${id}`, 'GET', params);
+    // console.log(`sdk.objects.byId :: params :: `, params, result);
     return result;
   }
 

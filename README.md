@@ -11,7 +11,7 @@ The official JavaScript SDK for Unbound's comprehensive communication and AI pla
 - 📱 **Messaging**: SMS/MMS and Email with templates and campaigns
 - 📞 **Voice**: Call management, conferencing, recording, transcription
 - 📹 **Video**: Video conferencing with advanced controls
-- 🤖 **AI**: Generative AI chat and text-to-speech
+- 🤖 **AI**: Generative AI chat, text-to-speech, and speech-to-text
 - 💾 **Data**: Object management with queries and relationships
 - 🔄 **Workflows**: Programmable workflow execution
 - 🔌 **Extensible**: Plugin system for transports and extensions
@@ -275,6 +275,53 @@ const audio = await api.ai.tts.create({
   text: 'Hello, this is a test message',
   voice: 'en-US-Standard-A',
   audioEncoding: 'MP3',
+});
+
+// Speech-to-Text - File/Storage Transcription
+const transcription = await api.ai.stt.create({
+  sourceType: 'storage',
+  storageId: 'audio-file-id',
+  engine: 'google',
+  languageCode: 'en-US',
+  metadata: {
+    diarization: true,
+    speakerCount: 2,
+  },
+});
+
+// Speech-to-Text - Real-Time Streaming (NEW Simplified API)
+const stream = await api.ai.stt.stream({
+  engine: 'google',
+  model: 'phone_call',
+  languageCode: 'en-US',
+  encoding: 'LINEAR16',
+  sampleRateHertz: 16000,
+  engagementSessionId: 'eng-123',
+});
+
+// Handle transcription events
+stream.on('transcript', (result) => {
+  console.log(`${result.isFinal ? '[FINAL]' : '[interim]'} ${result.text}`);
+  // Transcripts are automatically saved to database!
+});
+
+stream.on('error', (error) => console.error('Stream error:', error));
+stream.on('close', () => console.log('Stream closed'));
+
+// Write audio chunks
+stream.write(audioChunk); // Buffer or Uint8Array
+stream.end(); // Close when done
+
+// Later: Retrieve full transcript from database (automatic storage)
+const savedTranscript = await api.ai.stt.get(stream.sessionId, {
+  includeMessages: true,
+});
+
+// List all transcriptions
+const transcriptions = await api.ai.stt.list({
+  engagementSessionId: 'eng-123',
+  status: 'completed',
+  limit: 50,
 });
 ```
 

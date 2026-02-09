@@ -1,0 +1,111 @@
+export class MetricsService {
+  constructor(sdk) {
+    this.sdk = sdk;
+  }
+
+  /**
+   * Get current task router metrics
+   * Retrieves real-time metrics for task router queues, tasks, and workers.
+   * This provides insights into queue performance, wait times, task counts, and worker activity.
+   *
+   * @param {Object} params - Metric parameters
+   * @param {string} [params.period] - Time period for metrics calculation. Options: '5min', '15min', '30min', '1hour', '24hour'
+   * @param {string} [params.queueId] - Specific queue ID to filter metrics. If not provided, returns metrics for all queues
+   * @param {string} [params.metricType] - Type of metrics to retrieve: 'queue', 'task', 'worker', or 'all' (default: 'all')
+   * @param {number} [params.limit=100] - Maximum number of metric records to return (default: 100)
+   * @returns {Promise<Object>} Object containing the requested metrics
+   * @returns {Object} result.metrics - The metrics data organized by type
+   * @returns {Object} [result.metrics.queue] - Queue-level metrics (if metricType is 'queue' or 'all')
+   * @returns {number} result.metrics.queue.tasksWaiting - Number of tasks currently waiting in queue
+   * @returns {number} result.metrics.queue.tasksAssigned - Number of tasks currently assigned to workers
+   * @returns {number} result.metrics.queue.tasksConnected - Number of tasks currently connected/active
+   * @returns {number} result.metrics.queue.avgWaitTime - Average wait time in seconds for tasks in this period
+   * @returns {number} result.metrics.queue.longestWaitTime - Longest current wait time in seconds
+   * @returns {Object} [result.metrics.task] - Task-level metrics (if metricType is 'task' or 'all')
+   * @returns {number} result.metrics.task.created - Number of tasks created in this period
+   * @returns {number} result.metrics.task.completed - Number of tasks completed in this period
+   * @returns {number} result.metrics.task.abandoned - Number of tasks abandoned in this period
+   * @returns {Object} [result.metrics.worker] - Worker-level metrics (if metricType is 'worker' or 'all')
+   * @returns {number} result.metrics.worker.available - Number of workers currently available
+   * @returns {number} result.metrics.worker.busy - Number of workers currently busy with tasks
+   * @returns {number} result.metrics.worker.offline - Number of workers currently offline
+   * @returns {string} result.period - The time period used for calculations
+   * @returns {string} [result.queueId] - The queue ID if filtered to a specific queue
+   *
+   * @example
+   * // Get all current metrics for all queues
+   * const metrics = await sdk.taskRouter.metrics.getCurrent({
+   *   period: '15min',
+   *   metricType: 'all'
+   * });
+   * console.log(metrics.metrics.queue.tasksWaiting); // 5
+   * console.log(metrics.metrics.worker.available); // 12
+   *
+   * @example
+   * // Get queue-specific metrics for last 5 minutes
+   * const queueMetrics = await sdk.taskRouter.metrics.getCurrent({
+   *   period: '5min',
+   *   queueId: 'queue456',
+   *   metricType: 'queue',
+   *   limit: 50
+   * });
+   * console.log(queueMetrics.metrics.queue.avgWaitTime); // 45.3
+   *
+   * @example
+   * // Get worker metrics for last hour
+   * const workerMetrics = await sdk.taskRouter.metrics.getCurrent({
+   *   period: '1hour',
+   *   metricType: 'worker'
+   * });
+   * console.log(workerMetrics.metrics.worker.available); // 8
+   * console.log(workerMetrics.metrics.worker.busy); // 4
+   *
+   * @example
+   * // Get task completion metrics for last 24 hours
+   * const taskMetrics = await sdk.taskRouter.metrics.getCurrent({
+   *   period: '24hour',
+   *   metricType: 'task',
+   *   limit: 200
+   * });
+   * console.log(taskMetrics.metrics.task.created); // 150
+   * console.log(taskMetrics.metrics.task.completed); // 142
+   */
+  async getCurrent(accountId, params = {}) {
+    const { period, queueId, metricType, limit = 100 } = params;
+
+    this.sdk.validateParams(
+      { period, queueId, metricType, limit },
+      {
+        period: { type: 'string', required: false },
+        queueId: { type: 'string', required: false },
+        metricType: { type: 'string', required: false },
+        limit: { type: 'number', required: false },
+      },
+    );
+
+    const requestParams = {
+      body: {
+        limit,
+      },
+    };
+
+    if (period !== undefined) {
+      requestParams.body.period = period;
+    }
+
+    if (queueId !== undefined) {
+      requestParams.body.queueId = queueId;
+    }
+
+    if (metricType !== undefined) {
+      requestParams.body.metricType = metricType;
+    }
+
+    const result = await this.sdk._fetch(
+      '/taskRouter/metrics/current',
+      'GET',
+      requestParams,
+    );
+    return result;
+  }
+}

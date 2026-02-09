@@ -3,23 +3,45 @@ export class SipEndpointsService {
     this.sdk = sdk;
   }
 
-  async create({ recordTypeId, type, userId, name }) {
+  /**
+   * Create a new SIP endpoint
+   * @param {Object} options - The endpoint configuration
+   * @param {string} options.recordTypeId - Record type ID for permissions
+   * @param {string} options.userId - User ID to associate with this endpoint
+   * @param {string} options.type - Endpoint type: 'webRtc' or 'ipPhone'
+   * @param {string} options.name - Endpoint name
+   * @param {string} options.macAddress - MAC address for ipPhone type
+   * @param {Object} options - Additional provisioning fields (timezone, vlanId, etc.)
+   * @returns {Promise<Object>} Created endpoint
+   */
+  async create(options) {
+    const {
+      recordTypeId,
+      userId,
+      type,
+      name,
+      macAddress,
+      useSecureCalling,
+      ...provisioningFields
+    } = options;
+
     this.sdk.validateParams(
-      { recordTypeId, type, userId, name },
+      { type, useSecureCalling },
       {
-        recordTypeId: { type: 'string', required: false },
         type: { type: 'string', required: true },
-        userId: { type: 'string', required: false },
-        name: { type: 'string', required: false },
+        useSecureCalling: { type: 'boolean', required: false },
       },
     );
 
     const params = {
       body: {
         recordTypeId,
-        type,
         userId,
+        type,
+        useSecureCalling,
         name,
+        macAddress,
+        ...provisioningFields, // Include all provisioning fields
       },
     };
 
@@ -27,52 +49,37 @@ export class SipEndpointsService {
     return result;
   }
 
+  /**
+   * Get the authenticated user's WebRTC endpoint details
+   * @returns {Promise<Object>} WebRTC endpoint configuration
+   */
   async getWebRtcDetails() {
-    const params = {};
-    const result = await this.sdk._fetch('/sipEndpoints', 'GET', params, true);
+    const result = await this.sdk._fetch('/sipEndpoints/webrtc', 'GET');
     return result;
   }
 
-  async getUsersWebRtc() {
-    const result = await this.sdk._fetch('/sipEndpoints/users/webrtc', 'GET');
-    return result;
-  }
-
-  async list() {
-    const result = await this.sdk._fetch('/sipEndpoints/list', 'GET');
-    return result;
-  }
-
-  async get(endpointId) {
+  /**
+   * Update a SIP endpoint
+   * @param {string} endpointId - The endpoint ID
+   * @param {Object} options - The fields to update
+   * @param {string} options.name - Endpoint name
+   * @param {string} options.userId - User ID to associate with this endpoint
+   * * @param {string} options.useSecureCalling - provision with TLS / secure calling
+   * @param {string} options.macAddress - MAC address
+   * @param {boolean} options.useIceAccelerator - Enable/disable ICE accelerator
+   * @param {Object} options - Additional provisioning fields (timezone, vlanId, etc.)
+   * @returns {Promise<Object>} Updated endpoint
+   */
+  async update(endpointId, options) {
     this.sdk.validateParams(
       { endpointId },
       {
         endpointId: { type: 'string', required: true },
       },
     );
-
-    const result = await this.sdk._fetch(`/sipEndpoints/${endpointId}`, 'GET');
-    return result;
-  }
-
-  async update(endpointId, { displayName, description, enabled }) {
-    this.sdk.validateParams(
-      { endpointId },
-      {
-        endpointId: { type: 'string', required: true },
-        displayName: { type: 'string', required: false },
-        description: { type: 'string', required: false },
-        enabled: { type: 'boolean', required: false },
-      },
-    );
-
-    const updateData = {};
-    if (displayName) updateData.displayName = displayName;
-    if (description) updateData.description = description;
-    if (enabled !== undefined) updateData.enabled = enabled;
 
     const params = {
-      body: updateData,
+      body: { ...options }, // Pass all options through
     };
 
     const result = await this.sdk._fetch(
@@ -83,6 +90,11 @@ export class SipEndpointsService {
     return result;
   }
 
+  /**
+   * Delete a SIP endpoint
+   * @param {string} endpointId - The endpoint ID
+   * @returns {Promise<Object>} Deletion result
+   */
   async delete(endpointId) {
     this.sdk.validateParams(
       { endpointId },
@@ -94,6 +106,66 @@ export class SipEndpointsService {
     const result = await this.sdk._fetch(
       `/sipEndpoints/${endpointId}`,
       'DELETE',
+    );
+    return result;
+  }
+
+  /**
+   * Reboot a SIP endpoint (forces re-registration)
+   * @param {string} endpointId - The endpoint ID
+   * @returns {Promise<Object>} Reboot result
+   */
+  async reboot(endpointId) {
+    this.sdk.validateParams(
+      { endpointId },
+      {
+        endpointId: { type: 'string', required: true },
+      },
+    );
+
+    const result = await this.sdk._fetch(
+      `/sipEndpoints/${endpointId}/reboot`,
+      'POST',
+    );
+    return result;
+  }
+
+  /**
+   * Change the access secret for a SIP endpoint
+   * @param {string} endpointId - The endpoint ID
+   * @returns {Promise<Object>} New endpoint credentials
+   */
+  async changeAccessSecret(endpointId) {
+    this.sdk.validateParams(
+      { endpointId },
+      {
+        endpointId: { type: 'string', required: true },
+      },
+    );
+
+    const result = await this.sdk._fetch(
+      `/sipEndpoints/${endpointId}/secret`,
+      'POST',
+    );
+    return result;
+  }
+
+  /**
+   * Change the provisioning secret for a SIP endpoint
+   * @param {string} endpointId - The endpoint ID
+   * @returns {Promise<Object>} New endpoint credentials
+   */
+  async changeProvisioningSecret(endpointId) {
+    this.sdk.validateParams(
+      { endpointId },
+      {
+        endpointId: { type: 'string', required: true },
+      },
+    );
+
+    const result = await this.sdk._fetch(
+      `/sipEndpoints/${endpointId}/secret/provisioning`,
+      'POST',
     );
     return result;
   }

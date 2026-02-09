@@ -213,8 +213,25 @@ export class StorageService {
     formFields,
     endpoint = '/storage/upload',
     method = 'POST',
+    onProgress = null,
+    skipClamscan = false,
   ) {
     const isNode = typeof window === 'undefined';
+
+    // In browser with progress callback: Use XMLHttpRequest
+    if (!isNode && onProgress && typeof onProgress === 'function') {
+      return this._performUploadWithProgress(
+        file,
+        fileName,
+        formFields,
+        endpoint,
+        method,
+        onProgress,
+        skipClamscan,
+      );
+    }
+
+    // Default behavior: Use fetch via sdk._fetch
     let formData, headers;
 
     if (isNode) {
@@ -227,6 +244,15 @@ export class StorageService {
       headers = result.headers;
     }
 
+    if (process?.env?.AUTH_V3_TOKEN_TYPE_OVERRIDE) {
+      headers['x-token-type-override'] =
+        process.env.AUTH_V3_TOKEN_TYPE_OVERRIDE;
+    }
+
+    if (skipClamscan && process?.env?.CLAMSCAN_OVERRIDE_KEY) {
+      headers['x-clamscan-override-key'] = process.env.CLAMSCAN_OVERRIDE_KEY;
+    }
+
     const params = {
       body: formData,
       headers,
@@ -235,6 +261,123 @@ export class StorageService {
     return await this.sdk._fetch(endpoint, method, params, true);
   }
 
+  // Upload with progress tracking using XMLHttpRequest
+  async _performUploadWithProgress(
+    file,
+    fileName,
+    formFields,
+    endpoint,
+    method,
+    onProgress,
+    skipClamscan = false,
+  ) {
+    const { formData } = this._createBrowserFormData(
+      file,
+      fileName,
+      formFields,
+    );
+
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+
+      const startTime = Date.now();
+
+      // Progress tracking
+      xhr.upload.onprogress = (event) => {
+        if (event.lengthComputable) {
+          const percentComplete = (event.loaded / event.total) * 100;
+          const elapsed = (Date.now() - startTime) / 1000; // seconds
+          const speed = event.loaded / elapsed; // bytes per second
+
+          onProgress({
+            loaded: event.loaded,
+            total: event.total,
+            percentage: percentComplete,
+            speed: speed, // bytes/sec
+          });
+        }
+      };
+
+      xhr.onload = () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          try {
+            const response = JSON.parse(xhr.responseText);
+            resolve(response);
+          } catch (e) {
+            reject(new Error('Invalid JSON response'));
+          }
+        } else {
+          try {
+            const errorResponse = JSON.parse(xhr.responseText);
+            reject(errorResponse);
+          } catch (e) {
+            reject(new Error(`Upload failed with status ${xhr.status}`));
+          }
+        }
+      };
+
+      xhr.onerror = () => reject(new Error('Network error during upload'));
+      xhr.onabort = () => reject(new Error('Upload aborted'));
+
+      // Build URL with auth headers
+      const url = `${this.sdk.fullUrl}${endpoint}`;
+      xhr.open(method, url, true);
+
+      // IMPORTANT: Include credentials (cookies) for authentication
+      xhr.withCredentials = true;
+
+      // Add auth headers
+      if (this.sdk.token) {
+        xhr.setRequestHeader('Authorization', `Bearer ${this.sdk.token}`);
+      }
+      if (this.sdk.fwRequestId) {
+        xhr.setRequestHeader('x-request-id-fw', this.sdk.fwRequestId);
+      }
+      if (this.sdk.callId) {
+        xhr.setRequestHeader('x-call-id', this.sdk.callId);
+      }
+
+      // Add environment variable override headers
+      if (process?.env?.AUTH_V3_TOKEN_TYPE_OVERRIDE) {
+        xhr.setRequestHeader(
+          'x-token-type-override',
+          process.env.AUTH_V3_TOKEN_TYPE_OVERRIDE,
+        );
+      }
+      if (skipClamscan && process?.env?.CLAMSCAN_OVERRIDE_KEY) {
+        xhr.setRequestHeader(
+          'x-clamscan-override-key',
+          process.env.CLAMSCAN_OVERRIDE_KEY,
+        );
+      }
+
+      xhr.send(formData);
+    });
+  }
+  /*
+
+
+Response:
+{
+    "uploaded": [
+        {
+            "id": "017d0120251229hvdxjod4486582468133095",
+            "fileName": "sip-messages-20251223T195443.txt",
+            "fileSize": 18979,
+            "url": "https://masterc.api.dev-d01.app1svc.com/storage/017d0120251229hvdxjod4486582468133095.txt",
+            "mimeType": "text/plain",
+            "s3Regions": [
+                "d01",
+                "d03"
+            ],
+            "isPublic": false
+        }
+    ],
+    "viruses": [],
+    "errors": []
+}
+
+*/
   async upload({
     classification = 'generic',
     folder,
@@ -246,6 +389,8 @@ export class StorageService {
     relatedId,
     createAccessKey = false,
     accessKeyExpiresIn,
+    onProgress,
+    _options,
   }) {
     this.sdk.validateParams(
       {
@@ -270,7 +415,7 @@ export class StorageService {
         expireAfter: { type: 'string', required: false },
         relatedId: { type: 'string', required: false },
         createAccessKey: { type: 'boolean', required: false },
-        accessKeyExpiresIn: { type: 'string', required: false },
+        accessKeyExpiresIn: { type: 'number', required: false },
       },
     );
 
@@ -288,11 +433,20 @@ export class StorageService {
     if (accessKeyExpiresIn)
       formFields.push(['accessKeyExpiresIn', accessKeyExpiresIn]);
 
-    return this._performUpload(file, fileName, formFields);
+    return this._performUpload(
+      file,
+      fileName,
+      formFields,
+      '/storage/upload',
+      'POST',
+      onProgress,
+      _options?.skipScan,
+    );
   }
 
   async uploadFiles(files, options = {}) {
-    const { classification, expireAfter, isPublic, metadata } = options;
+    const { classification, expireAfter, isPublic, metadata, _options } =
+      options;
 
     // Validate files parameter
     if (!files) {
@@ -392,6 +546,10 @@ export class StorageService {
       if (metadata) formData.append('metadata', JSON.stringify(metadata));
     }
 
+    if (_options?.skipScan && process?.env?.CLAMSCAN_OVERRIDE_KEY) {
+      headers['x-clamscan-override-key'] = process.env.CLAMSCAN_OVERRIDE_KEY;
+    }
+
     const params = {
       body: formData,
       headers,
@@ -467,13 +625,19 @@ export class StorageService {
     return result;
   }
 
-  async uploadProfileImage({ file, classification = 'user_images', fileName }) {
+  async uploadProfileImage({
+    file,
+    classification = 'user_images',
+    fileName,
+    userId,
+  }) {
     this.sdk.validateParams(
-      { file, classification },
+      { file, classification, userId },
       {
         file: { type: 'object', required: true },
         classification: { type: 'string', required: true },
         fileName: { type: 'string', required: false },
+        userId: { type: 'string', required: false },
       },
     );
 
@@ -488,6 +652,7 @@ export class StorageService {
     // Build form fields exactly like the regular upload but only include classification
     const formFields = [];
     formFields.push(['classification', classification]);
+    formFields.push(['userId', userId]);
 
     // Use the correct profile image endpoint with proper FormData
     return this._performUpload(
@@ -751,6 +916,7 @@ export class StorageService {
       country,
       expireAfter,
       relatedId,
+      _options,
     },
   ) {
     this.sdk.validateParams(
@@ -786,6 +952,8 @@ export class StorageService {
         formFields,
         `/storage/${storageId}`,
         'PUT',
+        null,
+        _options?.skipScan,
       );
     } else {
       // If only updating metadata, use JSON request

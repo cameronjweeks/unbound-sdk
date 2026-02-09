@@ -110,10 +110,21 @@ export class PhoneNumbersService {
       voiceAppMetaData,
       voiceRecordTypeId,
       messagingRecordTypeId,
+      recordCalls,
     },
   ) {
     this.sdk.validateParams(
-      { id },
+      {
+        id,
+        messagingWebHookUrl,
+        voiceWebHookUrl,
+        voiceAppExternalUrl,
+        voiceAppExternalMethod,
+        voiceApp,
+        voiceRecordTypeId,
+        messagingRecordTypeId,
+        recordCalls,
+      },
       {
         id: { type: 'string', required: true },
         name: { type: 'string', required: false },
@@ -122,9 +133,9 @@ export class PhoneNumbersService {
         voiceAppExternalUrl: { type: 'string', required: false },
         voiceAppExternalMethod: { type: 'string', required: false },
         voiceApp: { type: 'string', required: false },
-        voiceAppMetaData: { type: 'object', required: false },
         voiceRecordTypeId: { type: 'string', required: false },
         messagingRecordTypeId: { type: 'string', required: false },
+        recordCalls: { type: 'boolean', required: false },
       },
     );
 
@@ -142,6 +153,7 @@ export class PhoneNumbersService {
     if (voiceRecordTypeId) updateData.voiceRecordTypeId = voiceRecordTypeId;
     if (messagingRecordTypeId)
       updateData.messagingRecordTypeId = messagingRecordTypeId;
+    if (recordCalls !== undefined) updateData.recordCalls = recordCalls;
 
     const params = {
       body: updateData,
@@ -187,10 +199,83 @@ export class PhoneNumbersService {
     return result;
   }
 
-  async getRoutingOptions() {
+  /**
+   * Get routing options for phone numbers or extensions
+   *
+   * Supports multiple query modes:
+   * 1. Get list of valid app types with metadata (appType: 'list')
+   * 2. Get all application types (default)
+   * 3. Get details for a specific application type
+   * 4. Get versions for a specific workflow
+   *
+   * @param {Object} [options] - Query options
+   * @param {string} [options.mode] - Context mode: 'phoneNumbers' (default) or 'extensions'
+   * @param {string} [options.type] - Filter by routing type: 'voice' or 'messaging'
+   * @param {string} [options.appType] - 'list' for metadata, or specific app type: 'workflows', 'extensions', 'voiceApps', 'users'
+   * @param {string} [options.workflowId] - Get versions for a specific workflow ID
+   * @param {string} [options.search] - Search/filter by name
+   * @returns {Promise<Object>} Routing options based on query parameters
+   * @example
+   * // Get metadata about available app types
+   * const metadata = await sdk.phoneNumbers.getRoutingOptions({ appType: 'list' });
+   * // Returns: { types: [{ key: 'voiceApps', label: 'Voice Applications', description: '...', ... }] }
+   *
+   * // Get all application types for phone numbers (default)
+   * const all = await sdk.phoneNumbers.getRoutingOptions();
+   * // Returns: { voiceApps: [...], workflows: [...], extensions: [...], webhooks: [...] }
+   *
+   * // Get routing options for extensions
+   * const extensionOptions = await sdk.phoneNumbers.getRoutingOptions({ mode: 'extensions' });
+   * // Returns: { voiceApps: [...], workflows: [...], users: [...] }
+   *
+   * // Get only voice routing options
+   * const voice = await sdk.phoneNumbers.getRoutingOptions({ type: 'voice' });
+   *
+   * // Get all workflows with their versions
+   * const workflows = await sdk.phoneNumbers.getRoutingOptions({ appType: 'workflows' });
+   *
+   * // Get all users (for extension routing)
+   * const users = await sdk.phoneNumbers.getRoutingOptions({ mode: 'extensions', appType: 'users' });
+   *
+   * // Get versions for a specific workflow
+   * const versions = await sdk.phoneNumbers.getRoutingOptions({ workflowId: 'wf_123' });
+   *
+   * // Search workflows by name
+   * const filtered = await sdk.phoneNumbers.getRoutingOptions({ appType: 'workflows', search: 'customer' });
+   */
+  async getRoutingOptions({ mode, type, appType, workflowId, search } = {}) {
+    const validationSchema = {};
+    const args = arguments[0] || {};
+
+    if ('mode' in args)
+      validationSchema.mode = { type: 'string', required: false };
+    if ('type' in args)
+      validationSchema.type = { type: 'string', required: false };
+    if ('appType' in args)
+      validationSchema.appType = { type: 'string', required: false };
+    if ('workflowId' in args)
+      validationSchema.workflowId = { type: 'string', required: false };
+    if ('search' in args)
+      validationSchema.search = { type: 'string', required: false };
+
+    if (Object.keys(validationSchema).length > 0) {
+      this.sdk.validateParams(args, validationSchema);
+    }
+
+    const params = {
+      query: {
+        mode,
+        type,
+        appType,
+        workflowId,
+        search,
+      },
+    };
+
     const result = await this.sdk._fetch(
       '/phoneNumbers/routing-options',
       'GET',
+      params,
     );
     return result;
   }

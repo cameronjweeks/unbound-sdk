@@ -167,6 +167,7 @@ export class BaseSDK {
   }
 
   async _fetch(endpoint, method, params = {}, forceFetch = false) {
+    const startTime = Date.now();
     const { body, query, headers = {}, returnRawResponse = false } = params;
 
     this.validateParams(
@@ -195,7 +196,6 @@ export class BaseSDK {
     params.headers = headers;
 
     // Try transport plugins first
-    console.log(`sdk :: request :: forceFetch:${forceFetch} :: endpoint:${endpoint}`);
     const transport = await this._getAvailableTransport(forceFetch);
     let response;
     if (transport) {
@@ -221,14 +221,27 @@ export class BaseSDK {
         );
 
         // Built-in HTTP transport (fallback)
-        return this._httpRequest(endpoint, method, params, returnRawResponse);
+        return this._httpRequest(
+          endpoint,
+          method,
+          params,
+          returnRawResponse,
+          startTime,
+        );
       }
     } else {
       // No transport available, fallback to HTTP
       if (forceFetch && process.env.AUTH_V3_TOKEN_TYPE_OVERRIDE) {
-        params.headers['x-token-type-override'] = process.env.AUTH_V3_TOKEN_TYPE_OVERRIDE;
+        params.headers['x-token-type-override'] =
+          process.env.AUTH_V3_TOKEN_TYPE_OVERRIDE;
       }
-      return this._httpRequest(endpoint, method, params, returnRawResponse);
+      return this._httpRequest(
+        endpoint,
+        method,
+        params,
+        returnRawResponse,
+        startTime,
+      );
     }
 
     // For streaming requests, return the raw response from transports
@@ -236,7 +249,14 @@ export class BaseSDK {
       return response;
     }
 
-    return this._processResponse(response, transport.name, method, endpoint);
+    const duration = Date.now() - startTime;
+    return this._processResponse(
+      response,
+      transport.name,
+      method,
+      endpoint,
+      duration,
+    );
   }
 
   _isMultipartBody(body) {
@@ -269,7 +289,13 @@ export class BaseSDK {
     return false;
   }
 
-  async _httpRequest(endpoint, method, params = {}, returnRawResponse = false) {
+  async _httpRequest(
+    endpoint,
+    method,
+    params = {},
+    returnRawResponse = false,
+    startTime = Date.now(),
+  ) {
     const { body, query, headers = {} } = params;
 
     const options = {
@@ -325,16 +351,17 @@ export class BaseSDK {
     }
 
     const response = await fetch(url, options);
+    const duration = Date.now() - startTime;
 
     // For streaming requests, return the raw fetch response
     if (returnRawResponse) {
       return response;
     }
 
-    return this._processResponse(response, 'https', method, endpoint);
+    return this._processResponse(response, 'https', method, endpoint, duration);
   }
 
-  async _processResponse(response, transport, method, endpoint) {
+  async _processResponse(response, transport, method, endpoint, duration = 0) {
     // Check if the response indicates an HTTP error
     // These are API/configuration errors, not transport failures
 
@@ -400,9 +427,11 @@ export class BaseSDK {
       // Debug logging for successful HTTP requests
       if (this.debugMode) {
         console.log(
-          `API :: ERROR :: ${transport} :: ${method.toUpperCase()} :: ${endpoint} :: ${
+          `API :: ERROR :: ${transport} :: ${method.toUpperCase()} :: ${
+            this.baseURL
+          }${endpoint} :: ${
             response?.status
-          } :: ${responseRequestId}`,
+          } :: ${responseRequestId} :: ${duration}ms`,
           httpError,
         );
       }
@@ -443,9 +472,11 @@ export class BaseSDK {
     // Debug logging for successful HTTP requests
     if (this.debugMode) {
       console.log(
-        `API :: ${transport} :: ${method.toUpperCase()} :: ${endpoint} :: ${
+        `API :: ${transport} :: ${method.toUpperCase()} :: ${
+          this.baseURL
+        }${endpoint} :: ${
           response?.status
-        } :: ${responseRequestId}`,
+        } :: ${responseRequestId} :: ${duration}ms`,
       );
     }
 
