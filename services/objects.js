@@ -103,6 +103,7 @@ export class ObjectsService {
         previousId = null,
         orderByDirection = 'DESC',
         expandDetails = false,
+        meta = {},
       } = args[0];
 
       this.sdk.validateParams(
@@ -115,6 +116,7 @@ export class ObjectsService {
           previousId,
           orderByDirection,
           expandDetails,
+          meta,
         },
         {
           object: { type: 'string', required: true },
@@ -125,6 +127,7 @@ export class ObjectsService {
           previousId: { type: 'string', required: false },
           orderByDirection: { type: 'string', required: false },
           expandDetails: { type: 'boolean', required: false },
+          meta: { type: 'object', required: false },
         },
       );
 

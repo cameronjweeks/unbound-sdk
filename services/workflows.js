@@ -302,7 +302,7 @@ export class WorkflowSessionsService {
       { workflowVersionId, sessionData },
       {
         workflowVersionId: { type: 'string', required: true },
-        sessionData: { type: 'object', required: true },
+        sessionData: { type: 'object', required: false },
       },
     );
 
@@ -338,7 +338,7 @@ export class WorkflowSessionsService {
       { sessionId, updateData },
       {
         sessionId: { type: 'string', required: true },
-        updateData: { type: 'object', required: true },
+        updateData: { type: 'object', required: false },
       },
     );
 

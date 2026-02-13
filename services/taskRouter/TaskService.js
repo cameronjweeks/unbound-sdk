@@ -696,6 +696,50 @@ export class TaskService {
   }
 
   /**
+   * Status Change task event
+   * Automated event anytime the status of a task is changed.
+   *
+   * @param {Object} options - Parameters
+   * @param {string} options.taskId - The task ID to complete (required)
+   * @param {string} options.status - The new status (required)
+   * @param {string} options.previousStatus - The previous status (required)
+   * @returns {Promise<Object>} Object containing the task ID and new status
+   * @returns {string} result.taskId - The task ID that was completed
+   *
+   * @example
+   * const result = await sdk.taskRouter.task.statusEvent({ taskId: 'task123', status: 'completed', previousStatus: 'wrapUp' });
+   * console.log(result.taskId); // "085000202601400010000345713108739"
+   *
+   */
+  async statusEvent(options = {}) {
+    const { taskId, status, previousStatus } = options;
+
+    this.sdk.validateParams(
+      { taskId, status, previousStatus },
+      {
+        taskId: { type: 'string', required: true },
+        status: { type: 'string', required: true },
+        previousStatus: { type: 'string', required: true },
+      },
+    );
+
+    const params = {
+      body: {
+        taskId,
+        status,
+        previousStatus,
+      },
+    };
+
+    const result = await this.sdk._fetch(
+      '/taskRouter/tasks/statusEvent',
+      'PUT',
+      params,
+    );
+    return result;
+  }
+
+  /**
    * Update task details
    * Updates the subject, disposition, or other metadata of an existing task.
    * This allows you to modify task information while it's in progress.
@@ -704,6 +748,7 @@ export class TaskService {
    * @param {Object} options - Parameters
    * @param {string} options.taskId - The task ID to update (required)
    * @param {string} [options.subject] - The new subject/title for the task
+   * @param {string} [options.summary] - The overall summary for the task
    * @param {string} [options.disposition] - The disposition code or outcome for the task (e.g., 'resolved', 'escalated', 'callback-scheduled')
    * @returns {Promise<Object>} Object containing the task ID
    * @returns {string} result.taskId - The task ID that was updated
@@ -734,16 +779,26 @@ export class TaskService {
    * console.log(result.taskId); // "task789"
    */
   async update(options = {}) {
-    const { taskId, subject, disposition, sipCallId, cdrId } = options;
+    const {
+      taskId,
+      subject,
+      disposition,
+      sipCallId,
+      cdrId,
+      summary,
+      sentiment,
+    } = options;
 
     this.sdk.validateParams(
-      { taskId, subject, disposition, sipCallId, cdrId },
+      { taskId, subject, disposition, sipCallId, cdrId, summary, sentiment },
       {
         taskId: { type: 'string', required: true },
         subject: { type: 'string', required: false },
         disposition: { type: 'string', required: false },
         cdrId: { type: 'string', required: false },
         sipCallId: { type: 'string', required: false },
+        summary: { type: 'string', required: false },
+        sentiment: { type: 'object', required: false },
       },
     );
 
@@ -757,6 +812,10 @@ export class TaskService {
       params.body.subject = subject;
     }
 
+    if (summary !== undefined) {
+      params.body.summary = summary;
+    }
+
     if (disposition !== undefined) {
       params.body.disposition = disposition;
     }
@@ -767,6 +826,10 @@ export class TaskService {
 
     if (sipCallId !== undefined) {
       params.body.sipCallId = sipCallId;
+    }
+
+    if (sentiment !== undefined) {
+      params.body.sentiment = sentiment;
     }
 
     const result = await this.sdk._fetch('/taskRouter/tasks/', 'PUT', params);

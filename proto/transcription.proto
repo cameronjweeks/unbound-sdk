@@ -65,6 +65,29 @@ message AudioRequest {
 
   // VAD event timestamp
   int64 vad_timestamp = 15;
+
+  // Playbook identifier (optional - links transcription to a playbook session)
+  string playbook_id = 16;
+
+  // Bridge identifier (optional - links related transcription streams)
+  // When multiple bridged call legs have transcription active,
+  // bridge_id lets the transcription service correlate them
+  string bridge_id = 17;
+
+  // Task identifier (optional - links transcription to a specific task)
+  string task_id = 18;
+
+  // Worker identifier (optional)
+  string worker_id = 19;
+
+  // Generate subject from transcription (optional)
+  bool generate_subject = 20;
+
+  // Generate transcript summary (optional)
+  bool generate_transcript_summary = 21;
+
+  // Generate sentiment analysis (optional)
+  bool generate_sentiment = 22;
 }
 
 // Audio configuration

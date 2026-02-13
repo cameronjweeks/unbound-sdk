@@ -173,6 +173,7 @@ export class SttStream extends EventEmitter {
         side = '',
         role = '',
         isLastChunk = false,
+        bridgeId = '',
       } = streamMetadata;
 
       // First chunk includes token and configuration
@@ -197,6 +198,13 @@ export class SttStream extends EventEmitter {
           sip_call_id: sipCallId,
           side: side,
           role: role,
+          playbook_id: this.options.playbookId || '',
+          task_id: this.options.taskId || '',
+          worker_id: this.options.workerId || '',
+          generate_subject: this.options.generateSubject || false,
+          generate_transcript_summary: this.options.generateTranscriptSummary || false,
+          generate_sentiment: this.options.generateSentiment || false,
+          bridge_id: bridgeId,
         };
 
         this.grpcCall.write(request);
@@ -212,6 +220,7 @@ export class SttStream extends EventEmitter {
           sip_call_id: sipCallId,
           side: side,
           role: role,
+          bridge_id: bridgeId,
         };
 
         // Include VAD fields if present in metadata

@@ -1,3 +1,5 @@
+import { PlaybooksService } from './ai/playbooks.js';
+
 export class AIService {
   constructor(sdk) {
     this.sdk = sdk;
@@ -5,6 +7,7 @@ export class AIService {
     this.tts = new TextToSpeechService(sdk);
     this.stt = new SpeechToTextService(sdk);
     this.extract = new ExtractService(sdk);
+    this.playbooks = new PlaybooksService(sdk);
   }
 }
 
@@ -405,6 +408,12 @@ export class SpeechToTextService {
       speechPadMs = 400,
       engagementSessionId,
       playbookId,
+      taskId,
+      workerId,
+      generateSubject,
+      generateTranscriptSummary,
+      generateSentiment,
+      bridgeId,
       name,
       metadata,
       sipCallId,
@@ -430,6 +439,12 @@ export class SpeechToTextService {
         speechPadMs,
         engagementSessionId,
         playbookId,
+        taskId,
+        workerId,
+        generateSubject,
+        generateTranscriptSummary,
+        generateSentiment,
+        bridgeId,
         name,
         metadata,
         sipCallId,
@@ -452,6 +467,12 @@ export class SpeechToTextService {
         speechPadMs: { type: 'number', required: false },
         engagementSessionId: { type: 'string', required: false },
         playbookId: { type: 'string', required: false },
+        taskId: { type: 'string', required: false },
+        workerId: { type: 'string', required: false },
+        generateSubject: { type: 'boolean', required: false },
+        generateTranscriptSummary: { type: 'boolean', required: false },
+        generateSentiment: { type: 'boolean', required: false },
+        bridgeId: { type: 'string', required: false },
         name: { type: 'string', required: false },
         metadata: { type: 'object', required: false },
         sipCallId: { type: 'string', required: false },
@@ -466,6 +487,12 @@ export class SpeechToTextService {
         model,
         engagementSessionId,
         playbookId,
+        taskId,
+        workerId,
+        generateSubject,
+        generateTranscriptSummary,
+        generateSentiment,
+        bridgeId,
         sipCallId,
         cdrId,
         name,
@@ -587,6 +614,17 @@ export class SpeechToTextService {
    * @param {string} [message.role] - Speaker role
    * @param {string} [message.sipCallId] - SIP call identifier
    * @param {string} [message.side] - Stream side ('send' or 'recv')
+   * @param {string} [message.bridgeId] - bridge id
+   * @param {Object} [message.sentiment] - Sentiment analysis data
+   * @param {number} [message.sentiment.score] - Overall sentiment score (-100 to +100)
+   * @param {number} [message.sentiment.previousScore] - Previous sentiment score (-100 to +100)
+   * @param {number} [message.sentiment.delta] - Score change (score - previousScore)
+   * @param {number} [message.sentiment.customerScore] - Customer sentiment score (-100 to +100)
+   * @param {number} [message.sentiment.agentScore] - Agent sentiment score (-100 to +100)
+   * @param {number} [message.sentiment.intensity] - Sentiment intensity (0 to 1)
+   * @param {string[]} [message.sentiment.emotions] - Detected emotions (up to 3)
+   * @param {string} [message.sentiment.trend] - Sentiment trend ('improving' | 'stable' | 'declining')
+   * @param {string} [message.sentiment.source] - Analysis source ('llm+acoustic' | 'acoustic_only' | 'carry_forward')
    * @returns {Promise<Object>} Created message result
    */
   async logMessage(
@@ -603,10 +641,12 @@ export class SpeechToTextService {
       role,
       sipCallId,
       side,
+      bridgeId,
+      sentiment,
     },
   ) {
     this.sdk.validateParams(
-      { messageId, sessionId, text },
+      { messageId, sessionId, text, bridgeId },
       {
         sessionId: { type: 'string', required: true },
         messageId: { type: 'string', required: false },
@@ -620,6 +660,8 @@ export class SpeechToTextService {
         role: { type: 'string', required: false },
         sipCallId: { type: 'string', required: false },
         side: { type: 'string', required: false },
+        bridgeId: { type: 'string', required: false },
+        sentiment: { type: 'object', required: false },
       },
     );
 
@@ -636,6 +678,8 @@ export class SpeechToTextService {
         role,
         sipCallId,
         side,
+        bridgeId,
+        sentiment,
       },
     };
 
