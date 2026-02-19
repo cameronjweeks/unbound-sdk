@@ -167,6 +167,31 @@ export class ObjectsService {
   }
 
   /**
+   * Query objects using UOQL v2 (SQL-like syntax).
+   *
+   * Usage:
+   * sdk.objects.queryV2({ query: "SELECT firstName, lastName FROM people WHERE companyId = '123' LIMIT 10" })
+   *
+   * @param {object} args
+   * @param {string} args.query - UOQL query string
+   * @param {boolean} [args.expandDetails=false] - Whether to expand related details
+   * @returns {Promise} Query results with pagination
+   */
+  async queryV2({ query, expandDetails = false, isPublic = false }) {
+    this.sdk.validateParams(
+      { query },
+      {
+        query: { type: 'string', required: true },
+      },
+    );
+
+    const body = { query, expandDetails };
+    if (isPublic) body.isPublic = isPublic;
+    const params = { body };
+    return await this.sdk._fetch('/object/query/v2', 'POST', params);
+  }
+
+  /**
    * Update an object record by ID
    *
    * Preferred usage (new signature):
@@ -334,6 +359,14 @@ export class ObjectsService {
     };
 
     const result = await this.sdk._fetch(`/object/${object}`, 'DELETE', params);
+    return result;
+  }
+
+  async botSchema() {
+    const result = await this.sdk._fetch(
+      '/object/manage/bot-schema',
+      'GET',
+    );
     return result;
   }
 
@@ -784,6 +817,37 @@ export class ObjectsService {
     return result;
   }
 
+  async modifyObject({
+    objectName,
+    isBotAccessible = null,
+    isPublicBot = null,
+    description = null,
+  }) {
+    this.sdk.validateParams(
+      { objectName, isBotAccessible, isPublicBot, description },
+      {
+        objectName: { type: 'string', required: true },
+        isBotAccessible: { type: 'boolean', required: false },
+        isPublicBot: { type: 'boolean', required: false },
+        description: { type: 'string', required: false },
+      },
+    );
+
+    const body = {};
+    if (isBotAccessible !== null) body.isBotAccessible = isBotAccessible;
+    if (isPublicBot !== null) body.isPublicBot = isPublicBot;
+    if (description !== null) body.description = description;
+
+    const params = { body };
+
+    const result = await this.sdk._fetch(
+      `/object/manage/${objectName}`,
+      'PUT',
+      params,
+    );
+    return result;
+  }
+
   async modifyColumn({
     objectName,
     columnName,
@@ -792,6 +856,10 @@ export class ObjectsService {
     defaultValue = null,
     isEncrypted = null,
     isRequired = null,
+    isBotAccessible = null,
+    isPublicBot = null,
+    isStandard = null,
+    description = null,
   }) {
     this.sdk.validateParams(
       {
@@ -802,6 +870,10 @@ export class ObjectsService {
         defaultValue,
         isEncrypted,
         isRequired,
+        isBotAccessible,
+        isPublicBot,
+        isStandard,
+        description,
       },
       {
         objectName: { type: 'string', required: true },
@@ -811,6 +883,10 @@ export class ObjectsService {
         defaultValue: { type: 'string', required: false },
         isEncrypted: { type: 'boolean', required: false },
         isRequired: { type: 'boolean', required: false },
+        isBotAccessible: { type: 'boolean', required: false },
+        isPublicBot: { type: 'boolean', required: false },
+        isStandard: { type: 'boolean', required: false },
+        description: { type: 'string', required: false },
       },
     );
 
@@ -820,6 +896,10 @@ export class ObjectsService {
     if (defaultValue !== null) body.defaultValue = defaultValue;
     if (isEncrypted !== null) body.isEncrypted = isEncrypted;
     if (isRequired !== null) body.isRequired = isRequired;
+    if (isBotAccessible !== null) body.isBotAccessible = isBotAccessible;
+    if (isPublicBot !== null) body.isPublicBot = isPublicBot;
+    if (isStandard !== null) body.isStandard = isStandard;
+    if (description !== null) body.description = description;
 
     const params = { body };
 

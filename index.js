@@ -25,6 +25,7 @@ import { RecordTypesService } from './services/recordTypes.js';
 import { GenerateIdService } from './services/generateId.js';
 import { EngagementMetricsService } from './services/engagementMetrics.js';
 import { TaskRouterService } from './services/taskRouter.js';
+import { KnowledgeBaseService } from './services/knowledgeBase.js';
 
 class UnboundSDK extends BaseSDK {
   constructor(options = {}) {
@@ -91,6 +92,7 @@ class UnboundSDK extends BaseSDK {
     this.generateId = new GenerateIdService(this);
     this.engagementMetrics = new EngagementMetricsService(this);
     this.taskRouter = new TaskRouterService(this);
+    this.knowledgeBase = new KnowledgeBaseService(this);
 
     // Add additional services that might be missing
     this._initializeAdditionalServices();
@@ -268,4 +270,5 @@ export { GenerateIdService } from './services/generateId.js';
 export { EngagementMetricsService } from './services/engagementMetrics.js';
 export { TaskRouterService } from './services/taskRouter.js';
 export { WorkerService } from './services/taskRouter/WorkerService.js';
+export { KnowledgeBaseService } from './services/knowledgeBase.js';
 export { BaseSDK } from './base.js';

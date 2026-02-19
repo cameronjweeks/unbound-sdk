@@ -21,18 +21,32 @@ export class GenerativeService {
     messages,
     systemPrompt,
     relatedId,
+    peopleId,
+    companyId,
     provider,
     model,
     temperature,
+    maxTokens,
     subscriptionId,
     stream,
     isPlayground = false,
     responseFormat,
+    sessionId,
+    scope,
+    manageSession,
+    tools,
+    toolConfig,
+    maxToolRounds,
+    recordTypeId,
+    meta,
+    qualityCheck,
+    isPublic,
   }) {
     this.sdk.validateParams(
       {
         stream,
         temperature,
+        maxTokens,
         subscriptionId,
         provider,
         model,
@@ -41,6 +55,18 @@ export class GenerativeService {
         systemPrompt,
         isPlayground,
         responseFormat,
+        sessionId,
+        scope,
+        manageSession,
+        tools,
+        toolConfig,
+        maxToolRounds,
+        recordTypeId,
+        peopleId,
+        companyId,
+        meta,
+        qualityCheck,
+        isPublic,
       },
       {
         prompt: { type: 'string', required: false },
@@ -49,10 +75,23 @@ export class GenerativeService {
         provider: { type: 'string', required: false },
         model: { type: 'string', required: false },
         temperature: { type: 'number', required: false },
+        maxTokens: { type: 'number', required: false },
         subscriptionId: { type: 'string', required: false },
         stream: { type: 'boolean', required: false },
         isPlayground: { type: 'boolean', required: false },
         responseFormat: { type: 'object', required: false },
+        sessionId: { type: 'string', required: false },
+        scope: { type: 'string', required: false },
+        manageSession: { type: 'boolean', required: false },
+        tools: { type: 'array', required: false },
+        toolConfig: { type: 'object', required: false },
+        maxToolRounds: { type: 'number', required: false },
+        recordTypeId: { type: 'string', required: false },
+        peopleId: { type: 'string', required: false },
+        companyId: { type: 'string', required: false },
+        meta: { type: 'object', required: false },
+        qualityCheck: { type: 'boolean', required: false },
+        isPublic: { type: 'boolean', required: false },
       },
     );
 
@@ -63,24 +102,148 @@ export class GenerativeService {
         messages,
         systemPrompt,
         relatedId,
+        peopleId,
+        companyId,
         provider,
         model,
         temperature,
+        maxTokens,
         subscriptionId,
         stream,
         responseFormat,
+        sessionId,
+        scope,
+        manageSession,
+        tools,
+        toolConfig,
+        maxToolRounds,
+        recordTypeId,
+        meta,
+        qualityCheck,
+        isPublic,
       },
       // Return raw response for streaming to allow client-side stream handling
       returnRawResponse: stream === true,
     };
 
-    // Force HTTP transport when streaming is enabled since NATS doesn't support streaming responses
-    const forceFetch = stream === true;
+    // Force HTTP transport when streaming or when messages contain large content (too large for NATS)
+    const hasLargeContent = messages?.some(
+      (m) =>
+        Array.isArray(m.content) &&
+        m.content.some(
+          (c) =>
+            c.type === 'image' ||
+            c.type === 'image_url' ||
+            c.type === 'document',
+        ),
+    );
+    const forceFetch = stream === true || hasLargeContent;
     const result = await this.sdk._fetch(
       '/ai/generative/chat',
       'POST',
       params,
       forceFetch,
+    );
+    return result;
+  }
+
+  /**
+   * List available chat tools and their metadata
+   * @returns {Promise<Object>} { tools: Array<{ name, label, description, configRequirements }>, count: number }
+   */
+  async listTools() {
+    return await this.sdk._fetch('/ai/generative/tools', 'GET');
+  }
+
+  /**
+   * List chat sessions visible to the current user
+   * @param {Object} [options] - Filter options
+   * @param {string} [options.relatedId] - Filter by related object ID
+   * @param {string} [options.scope] - Filter by scope ('user' or 'account')
+   * @param {number} [options.limit=25] - Results limit
+   * @param {number} [options.offset=0] - Pagination offset
+   * @returns {Promise<Object>} { sessions: Array }
+   */
+  async listSessions({ relatedId, scope, limit, offset } = {}) {
+    this.sdk.validateParams(
+      { relatedId, scope, limit, offset },
+      {
+        relatedId: { type: 'string', required: false },
+        scope: { type: 'string', required: false },
+        limit: { type: 'number', required: false },
+        offset: { type: 'number', required: false },
+      },
+    );
+
+    const params = { query: { relatedId, scope, limit, offset } };
+    const result = await this.sdk._fetch(
+      '/ai/generative/sessions',
+      'GET',
+      params,
+    );
+    return result;
+  }
+
+  /**
+   * Get a chat session with its message history
+   * @param {Object} options
+   * @param {string} options.sessionId - Session ID to retrieve
+   * @returns {Promise<Object>} { session: { id, name, scope, relatedId, provider, model, messages, messageCount, lastMessageAt, createdAt } }
+   */
+  async getSession({ sessionId }) {
+    this.sdk.validateParams(
+      { sessionId },
+      { sessionId: { type: 'string', required: true } },
+    );
+
+    const result = await this.sdk._fetch(
+      `/ai/generative/sessions/${sessionId}`,
+      'GET',
+    );
+    return result;
+  }
+
+  /**
+   * Update a chat session (name, scope)
+   * @param {Object} options
+   * @param {string} options.sessionId - Session ID to update
+   * @param {string} [options.name] - New session name
+   * @param {string} [options.scope] - New scope ('user' or 'account')
+   * @returns {Promise<Object>} { success: true }
+   */
+  async updateSession({ sessionId, name, scope }) {
+    this.sdk.validateParams(
+      { sessionId, name, scope },
+      {
+        sessionId: { type: 'string', required: true },
+        name: { type: 'string', required: false },
+        scope: { type: 'string', required: false },
+      },
+    );
+
+    const result = await this.sdk._fetch(
+      `/ai/generative/sessions/${sessionId}`,
+      'PUT',
+      { body: { name, scope } },
+    );
+    return result;
+  }
+
+  /**
+   * Delete a chat session
+   * @param {Object} options
+   * @param {string} options.sessionId - Session ID to delete
+   * @returns {Promise<Object>} { success: true }
+   */
+  async deleteSession({ sessionId }) {
+    this.sdk.validateParams(
+      { sessionId },
+      { sessionId: { type: 'string', required: true } },
+    );
+
+    const result = await this.sdk._fetch(
+      `/ai/generative/sessions/${sessionId}`,
+      'DELETE',
     );
     return result;
   }
