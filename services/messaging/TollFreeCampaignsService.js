@@ -6,60 +6,133 @@ export class TollFreeCampaignsService {
   /**
    * Create toll-free campaign
    * @param {Object} params - Campaign parameters
-   * @param {string} params.companyName - Company name (required)
-   * @param {string} params.phoneNumber - Phone number (required)
-   * @param {string} params.description - Campaign description (required)
-   * @param {string} params.messageFlow - Message flow description (required)
-   * @param {string} [params.helpMessage] - Help message
-   * @param {Array<string>} [params.optInKeywords] - Opt-in keywords
-   * @param {Array<string>} [params.optOutKeywords] - Opt-out keywords
+   * @param {string} params.name - Campaign name (required)
+   * @param {string} [params.campaignDescription] - Campaign description
+   * @param {string} [params.address1] - Business address line 1
+   * @param {string} [params.address2] - Business address line 2
+   * @param {string} [params.city] - Business city
+   * @param {string} [params.state] - Business state
+   * @param {string} [params.zip] - Business zip code
+   * @param {string} [params.pocFirstName] - Point of contact first name
+   * @param {string} [params.pocLastName] - Point of contact last name
+   * @param {string} [params.pocPhoneNumber] - Point of contact phone
+   * @param {string} [params.pocEmail] - Point of contact email
+   * @param {string} [params.businessName] - Business name
    * @param {string} [params.website] - Business website
+   * @param {string} [params.messageVolume] - Expected message volume
+   * @param {string} [params.optInWorkflow] - Opt-in workflow description
+   * @param {Array<string>} [params.optInWorkflowUrls] - Opt-in workflow image URLs
+   * @param {Array<string>} [params.phoneNumbers] - Phone numbers for campaign
+   * @param {string} [params.productionMessageExample] - Production message example
+   * @param {string} [params.useCase] - Use case category
+   * @param {string} [params.useCaseDescription] - Use case description
+   * @param {string} [params.webhookUrl] - Webhook URL
+   * @param {string} [params.businessRegistrationNumber] - Business registration number
+   * @param {string} [params.businessRegistrationType] - Business registration type
+   * @param {string} [params.businessRegistrationCountry] - Business registration country (ISO 3166-1 alpha-2)
+   * @param {string} [params.doingBusinessAs] - Doing business as name
+   * @param {string} [params.entityType] - Entity type
+   * @param {string} [params.optInConfirmationResponse] - Opt-in confirmation response
+   * @param {string} [params.helpMessageResponse] - Help message response
+   * @param {string} [params.privacyPolicyURL] - Privacy policy URL
+   * @param {string} [params.termsAndConditionURL] - Terms and conditions URL
+   * @param {boolean} [params.ageGatedContent] - Age gated content flag
+   * @param {string} [params.optInKeywords] - Opt-in keywords
    * @returns {Promise<Object>} Created campaign details
    */
   async create({
-    companyName,
-    phoneNumber,
-    description,
-    messageFlow,
-    helpMessage,
-    optInKeywords,
-    optOutKeywords,
+    name,
+    campaignDescription,
+    address1,
+    address2,
+    city,
+    state,
+    zip,
+    pocFirstName,
+    pocLastName,
+    pocPhoneNumber,
+    pocEmail,
+    businessName,
     website,
+    messageVolume,
+    optInWorkflow,
+    optInWorkflowUrls,
+    phoneNumbers,
+    productionMessageExample,
+    useCase,
+    useCaseDescription,
+    webhookUrl,
+    businessRegistrationNumber,
+    businessRegistrationType,
+    businessRegistrationCountry,
+    doingBusinessAs,
+    entityType,
+    optInConfirmationResponse,
+    helpMessageResponse,
+    privacyPolicyURL,
+    termsAndConditionURL,
+    ageGatedContent,
+    optInKeywords,
   }) {
     this.sdk.validateParams(
-      { companyName, phoneNumber, description, messageFlow },
+      { name },
       {
-        companyName: { type: 'string', required: true },
-        phoneNumber: { type: 'string', required: true },
-        description: { type: 'string', required: true },
-        messageFlow: { type: 'string', required: true },
-        helpMessage: { type: 'string', required: false },
-        optInKeywords: { type: 'array', required: false },
-        optOutKeywords: { type: 'array', required: false },
-        website: { type: 'string', required: false },
+        name: { type: 'string', required: true },
       },
     );
 
-    const campaignData = {
-      companyName,
-      phoneNumber,
-      description,
-      messageFlow,
-    };
+    const campaignData = { name };
 
-    if (helpMessage) campaignData.helpMessage = helpMessage;
-    if (optInKeywords) campaignData.optInKeywords = optInKeywords;
-    if (optOutKeywords) campaignData.optOutKeywords = optOutKeywords;
-    if (website) campaignData.website = website;
-
-    const options = {
-      body: campaignData,
-    };
+    if (campaignDescription !== undefined)
+      campaignData.campaignDescription = campaignDescription;
+    if (address1 !== undefined) campaignData.address1 = address1;
+    if (address2 !== undefined) campaignData.address2 = address2;
+    if (city !== undefined) campaignData.city = city;
+    if (state !== undefined) campaignData.state = state;
+    if (zip !== undefined) campaignData.zip = zip;
+    if (pocFirstName !== undefined) campaignData.pocFirstName = pocFirstName;
+    if (pocLastName !== undefined) campaignData.pocLastName = pocLastName;
+    if (pocPhoneNumber !== undefined)
+      campaignData.pocPhoneNumber = pocPhoneNumber;
+    if (pocEmail !== undefined) campaignData.pocEmail = pocEmail;
+    if (businessName !== undefined) campaignData.businessName = businessName;
+    if (website !== undefined) campaignData.website = website;
+    if (messageVolume !== undefined) campaignData.messageVolume = messageVolume;
+    if (optInWorkflow !== undefined) campaignData.optInWorkflow = optInWorkflow;
+    if (optInWorkflowUrls !== undefined)
+      campaignData.optInWorkflowUrls = optInWorkflowUrls;
+    if (phoneNumbers !== undefined) campaignData.phoneNumbers = phoneNumbers;
+    if (productionMessageExample !== undefined)
+      campaignData.productionMessageExample = productionMessageExample;
+    if (useCase !== undefined) campaignData.useCase = useCase;
+    if (useCaseDescription !== undefined)
+      campaignData.useCaseDescription = useCaseDescription;
+    if (webhookUrl !== undefined) campaignData.webhookUrl = webhookUrl;
+    if (businessRegistrationNumber !== undefined)
+      campaignData.businessRegistrationNumber = businessRegistrationNumber;
+    if (businessRegistrationType !== undefined)
+      campaignData.businessRegistrationType = businessRegistrationType;
+    if (businessRegistrationCountry !== undefined)
+      campaignData.businessRegistrationCountry = businessRegistrationCountry;
+    if (doingBusinessAs !== undefined)
+      campaignData.doingBusinessAs = doingBusinessAs;
+    if (entityType !== undefined) campaignData.entityType = entityType;
+    if (optInConfirmationResponse !== undefined)
+      campaignData.optInConfirmationResponse = optInConfirmationResponse;
+    if (helpMessageResponse !== undefined)
+      campaignData.helpMessageResponse = helpMessageResponse;
+    if (privacyPolicyURL !== undefined)
+      campaignData.privacyPolicyURL = privacyPolicyURL;
+    if (termsAndConditionURL !== undefined)
+      campaignData.termsAndConditionURL = termsAndConditionURL;
+    if (ageGatedContent !== undefined)
+      campaignData.ageGatedContent = ageGatedContent;
+    if (optInKeywords !== undefined) campaignData.optInKeywords = optInKeywords;
 
     const result = await this.sdk._fetch(
       '/messaging/campaigns/tollfree',
       'POST',
-      options,
+      { body: campaignData },
     );
     return result;
   }
@@ -88,27 +161,6 @@ export class TollFreeCampaignsService {
    * Update toll-free campaign
    * @param {string} campaignId - Campaign ID to update
    * @param {Object} params - Update parameters
-   * @param {string} [params.name] - Campaign name
-   * @param {string} [params.campaignDescription] - Campaign description
-   * @param {string} [params.address1] - Business address line 1
-   * @param {string} [params.address2] - Business address line 2
-   * @param {string} [params.city] - Business city
-   * @param {string} [params.state] - Business state
-   * @param {string} [params.zip] - Business zip code
-   * @param {string} [params.pocFirstName] - Point of contact first name
-   * @param {string} [params.pocLastName] - Point of contact last name
-   * @param {string} [params.pocPhoneNumber] - Point of contact phone
-   * @param {string} [params.pocEmail] - Point of contact email
-   * @param {string} [params.businessName] - Business name
-   * @param {string} [params.website] - Business website
-   * @param {string} [params.messageVolume] - Expected message volume
-   * @param {string} [params.optInWorkflow] - Opt-in workflow description
-   * @param {Array<string>} [params.optInWorkflowUrls] - Opt-in workflow image URLs
-   * @param {Array<string>} [params.phoneNumbers] - Phone numbers for campaign
-   * @param {string} [params.productionMessageExample] - Production message example
-   * @param {string} [params.useCase] - Use case category
-   * @param {string} [params.useCaseDescription] - Use case description
-   * @param {string} [params.webhookUrl] - Webhook URL
    * @returns {Promise<Object>} Updated campaign information
    */
   async update(
@@ -135,56 +187,23 @@ export class TollFreeCampaignsService {
       useCase,
       useCaseDescription,
       webhookUrl,
+      businessRegistrationNumber,
+      businessRegistrationType,
+      businessRegistrationCountry,
+      doingBusinessAs,
+      entityType,
+      optInConfirmationResponse,
+      helpMessageResponse,
+      privacyPolicyURL,
+      termsAndConditionURL,
+      ageGatedContent,
+      optInKeywords,
     } = {},
   ) {
     this.sdk.validateParams(
-      {
-        campaignId,
-        name,
-        campaignDescription,
-        address1,
-        address2,
-        city,
-        state,
-        zip,
-        pocFirstName,
-        pocLastName,
-        pocPhoneNumber,
-        pocEmail,
-        businessName,
-        website,
-        messageVolume,
-        optInWorkflow,
-        optInWorkflowUrls,
-        phoneNumbers,
-        productionMessageExample,
-        useCase,
-        useCaseDescription,
-        webhookUrl,
-      },
+      { campaignId },
       {
         campaignId: { type: 'string', required: true },
-        name: { type: 'string', required: false },
-        campaignDescription: { type: 'string', required: false },
-        address1: { type: 'string', required: false },
-        address2: { type: 'string', required: false },
-        city: { type: 'string', required: false },
-        state: { type: 'string', required: false },
-        zip: { type: 'string', required: false },
-        pocFirstName: { type: 'string', required: false },
-        pocLastName: { type: 'string', required: false },
-        pocPhoneNumber: { type: 'string', required: false },
-        pocEmail: { type: 'string', required: false },
-        businessName: { type: 'string', required: false },
-        website: { type: 'string', required: false },
-        messageVolume: { type: 'string', required: false },
-        optInWorkflow: { type: 'string', required: false },
-        optInWorkflowUrls: { type: 'array', required: false },
-        phoneNumbers: { type: 'array', required: false },
-        productionMessageExample: { type: 'string', required: false },
-        useCase: { type: 'string', required: false },
-        useCaseDescription: { type: 'string', required: false },
-        webhookUrl: { type: 'string', required: false },
       },
     );
 
@@ -215,15 +234,31 @@ export class TollFreeCampaignsService {
     if (useCaseDescription !== undefined)
       updateData.useCaseDescription = useCaseDescription;
     if (webhookUrl !== undefined) updateData.webhookUrl = webhookUrl;
-
-    const options = {
-      body: updateData,
-    };
+    if (businessRegistrationNumber !== undefined)
+      updateData.businessRegistrationNumber = businessRegistrationNumber;
+    if (businessRegistrationType !== undefined)
+      updateData.businessRegistrationType = businessRegistrationType;
+    if (businessRegistrationCountry !== undefined)
+      updateData.businessRegistrationCountry = businessRegistrationCountry;
+    if (doingBusinessAs !== undefined)
+      updateData.doingBusinessAs = doingBusinessAs;
+    if (entityType !== undefined) updateData.entityType = entityType;
+    if (optInConfirmationResponse !== undefined)
+      updateData.optInConfirmationResponse = optInConfirmationResponse;
+    if (helpMessageResponse !== undefined)
+      updateData.helpMessageResponse = helpMessageResponse;
+    if (privacyPolicyURL !== undefined)
+      updateData.privacyPolicyURL = privacyPolicyURL;
+    if (termsAndConditionURL !== undefined)
+      updateData.termsAndConditionURL = termsAndConditionURL;
+    if (ageGatedContent !== undefined)
+      updateData.ageGatedContent = ageGatedContent;
+    if (optInKeywords !== undefined) updateData.optInKeywords = optInKeywords;
 
     const result = await this.sdk._fetch(
       `/messaging/campaigns/tollfree/${campaignId}`,
       'PUT',
-      options,
+      { body: updateData },
     );
     return result;
   }
@@ -250,7 +285,7 @@ export class TollFreeCampaignsService {
    * @param {number} [params.limit=50] - Items per page
    * @param {string} [params.name] - Filter by campaign name
    * @param {string} [params.status] - Filter by status
-   * @param {string} [params.operatorType='contains'] - Filter operator: contains, equals, startsWith, endsWith
+   * @param {string} [params.operatorType='contains'] - Filter operator
    * @returns {Promise<Array>} List of campaigns
    */
   async list({ page, limit, name, status, operatorType } = {}) {
@@ -281,6 +316,124 @@ export class TollFreeCampaignsService {
     const result = await this.sdk._fetch(
       `/messaging/campaigns/tollfree/refresh/${campaignId}`,
       'GET',
+    );
+    return result;
+  }
+
+  /**
+   * Submit a draft toll-free campaign for verification
+   * @param {string} campaignId - Campaign ID to submit
+   * @param {Object} params - Submit parameters
+   * @param {boolean} params.termsAndConditions - Must be true to accept T&C
+   * @returns {Promise<Object>} Submission result
+   */
+  async submit(campaignId, { termsAndConditions } = {}) {
+    this.sdk.validateParams(
+      { campaignId, termsAndConditions },
+      {
+        campaignId: { type: 'string', required: true },
+        termsAndConditions: { type: 'boolean', required: true },
+      },
+    );
+
+    const result = await this.sdk._fetch(
+      `/messaging/campaigns/tollfree/${campaignId}/submit`,
+      'POST',
+      { body: { termsAndConditions } },
+    );
+    return result;
+  }
+
+  /**
+   * Duplicate an existing campaign as a new Draft
+   * @param {string} campaignId - Source campaign ID
+   * @param {Object} [params] - Optional parameters
+   * @param {string} [params.name] - Name for the new campaign
+   * @returns {Promise<Object>} New draft campaign details
+   */
+  async duplicate(campaignId, { name } = {}) {
+    this.sdk.validateParams(
+      { campaignId },
+      {
+        campaignId: { type: 'string', required: true },
+      },
+    );
+
+    const body = {};
+    if (name !== undefined) body.name = name;
+
+    const result = await this.sdk._fetch(
+      `/messaging/campaigns/tollfree/${campaignId}/duplicate`,
+      'POST',
+      { body },
+    );
+    return result;
+  }
+
+  /**
+   * List phone numbers assigned to a campaign
+   * @param {string} campaignId - Campaign ID
+   * @returns {Promise<Array>} List of phone numbers
+   */
+  async listPhoneNumbers(campaignId) {
+    this.sdk.validateParams(
+      { campaignId },
+      {
+        campaignId: { type: 'string', required: true },
+      },
+    );
+
+    const result = await this.sdk._fetch(
+      `/messaging/campaigns/tollfree/${campaignId}/phoneNumbers`,
+      'GET',
+    );
+    return result;
+  }
+
+  /**
+   * Add phone number to campaign
+   * @param {string} campaignId - Campaign ID
+   * @param {Object} params - Phone number data
+   * @param {string} params.phoneNumber - Phone number to add
+   * @returns {Promise<Object>} Result
+   */
+  async addPhoneNumber(campaignId, { phoneNumber }) {
+    this.sdk.validateParams(
+      { campaignId, phoneNumber },
+      {
+        campaignId: { type: 'string', required: true },
+        phoneNumber: { type: 'string', required: true },
+      },
+    );
+
+    const result = await this.sdk._fetch(
+      `/messaging/campaigns/tollfree/${campaignId}/phoneNumber`,
+      'POST',
+      { body: { phoneNumber } },
+    );
+    return result;
+  }
+
+  /**
+   * Remove phone number from campaign
+   * @param {string} campaignId - Campaign ID
+   * @param {Object} params - Phone number data
+   * @param {string} params.phoneNumber - Phone number to remove
+   * @returns {Promise<Object>} Result
+   */
+  async removePhoneNumber(campaignId, { phoneNumber }) {
+    this.sdk.validateParams(
+      { campaignId, phoneNumber },
+      {
+        campaignId: { type: 'string', required: true },
+        phoneNumber: { type: 'string', required: true },
+      },
+    );
+
+    const result = await this.sdk._fetch(
+      `/messaging/campaigns/tollfree/${campaignId}/phoneNumber`,
+      'DELETE',
+      { body: { phoneNumber } },
     );
     return result;
   }

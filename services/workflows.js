@@ -30,6 +30,82 @@ export class WorkflowsService {
     const result = await this.sdk._fetch('/workflows/modules', 'GET', params);
     return result;
   }
+
+  async listFormulaFunctions() {
+    const result = await this.sdk._fetch(
+      '/workflows/formula-functions',
+      'GET',
+    );
+    return result;
+  }
+
+  async getAvailableHolidaySets() {
+    const result = await this.sdk._fetch(
+      '/workflows/holiday-sets',
+      'GET',
+    );
+    return result;
+  }
+
+  async simulateWebhook(webhookSettings) {
+    this.sdk.validateParams(
+      { webhookSettings },
+      {
+        webhookSettings: { type: 'object', required: true },
+      },
+    );
+
+    const params = {
+      body: { webhookSettings },
+    };
+
+    const result = await this.sdk._fetch(
+      '/workflows/webhook/simulate',
+      'POST',
+      params,
+    );
+    return result;
+  }
+
+  async simulateLookup(lookupSettings) {
+    this.sdk.validateParams(
+      { lookupSettings },
+      {
+        lookupSettings: { type: 'object', required: true },
+      },
+    );
+
+    const params = {
+      body: { lookupSettings },
+    };
+
+    const result = await this.sdk._fetch(
+      '/workflows/lookup/simulate',
+      'POST',
+      params,
+    );
+    return result;
+  }
+
+  async simulateTimeControl(timeControlSettings, testDateTime = null) {
+    this.sdk.validateParams(
+      { timeControlSettings },
+      {
+        timeControlSettings: { type: 'object', required: true },
+      },
+    );
+
+    const params = {
+      body: { timeControlSettings, testDateTime },
+    };
+
+    const result = await this.sdk._fetch(
+      '/workflows/timeControl/simulate',
+      'POST',
+      params,
+    );
+    return result;
+  }
 }
 
 export class WorkflowItemsService {
@@ -383,6 +459,63 @@ export class WorkflowSessionsService {
     const result = await this.sdk._fetch(
       `/workflows/sessions/${sessionId}`,
       'DELETE',
+    );
+    return result;
+  }
+
+  async logTranscript(sessionId, transcriptData) {
+    this.sdk.validateParams(
+      { sessionId },
+      {
+        sessionId: { type: 'string', required: true },
+      },
+    );
+
+    const params = {
+      body: transcriptData,
+    };
+
+    const result = await this.sdk._fetch(
+      `/workflows/session/${sessionId}/transcript`,
+      'POST',
+      params,
+    );
+    return result;
+  }
+
+  async replay(sessionId) {
+    this.sdk.validateParams(
+      { sessionId },
+      {
+        sessionId: { type: 'string', required: true },
+      },
+    );
+
+    const result = await this.sdk._fetch(
+      `/workflows/session/${sessionId}/replay`,
+      'GET',
+    );
+    return result;
+  }
+
+  async analytics(workflowVersionId, { startDate, endDate } = {}) {
+    this.sdk.validateParams(
+      { workflowVersionId, startDate, endDate },
+      {
+        workflowVersionId: { type: 'string', required: true },
+        startDate: { type: 'string', required: true },
+        endDate: { type: 'string', required: true },
+      },
+    );
+
+    const params = {
+      query: { startDate, endDate },
+    };
+
+    const result = await this.sdk._fetch(
+      `/workflows/${workflowVersionId}/analytics`,
+      'GET',
+      params,
     );
     return result;
   }

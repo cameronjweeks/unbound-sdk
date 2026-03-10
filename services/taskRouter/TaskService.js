@@ -81,6 +81,7 @@ export class TaskService {
       relatedId,
       cdrId,
       sipCallId,
+      aiChatSessionId,
     } = options;
 
     this.sdk.validateParams(
@@ -99,6 +100,7 @@ export class TaskService {
         relatedObject,
         relatedId,
         sipCallId,
+        aiChatSessionId,
       },
       {
         type: { type: 'string', required: true },
@@ -115,6 +117,7 @@ export class TaskService {
         relatedObject: { type: 'string', required: false },
         relatedId: { type: 'string', required: false },
         sipCallId: { type: 'string', required: false },
+        aiChatSessionId: { type: 'string', required: false },
       },
     );
 
@@ -168,8 +171,13 @@ export class TaskService {
     if (relatedId !== undefined) {
       params.body.relatedId = relatedId;
     }
+
     if (sipCallId !== undefined) {
       params.body.sipCallId = sipCallId;
+    }
+
+    if (aiChatSessionId !== undefined) {
+      params.body.aiChatSessionId = aiChatSessionId;
     }
 
     const result = await this.sdk._fetch('/taskRouter/tasks', 'POST', params);

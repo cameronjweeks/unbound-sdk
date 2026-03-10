@@ -378,6 +378,28 @@ Response:
 }
 
 */
+  /**
+   * Upload a file to storage with optional format conversion
+   * @param {Object} config - Configuration object
+   * @param {Object} config.file - File content (Buffer or File) - REQUIRED
+   * @param {string} [config.classification='generic'] - File classification (e.g., 'fax', 'files', 'generic')
+   * @param {string} [config.folder] - Folder path for organizing files
+   * @param {string} [config.fileName] - Original file name
+   * @param {boolean} [config.isPublic=false] - Whether file is publicly accessible
+   * @param {string} [config.country='US'] - Country code for region selection
+   * @param {string} [config.expireAfter] - Expiration time
+   * @param {string} [config.relatedId] - Related object ID
+   * @param {boolean} [config.createAccessKey=false] - Generate an access key for the file
+   * @param {number} [config.accessKeyExpiresIn] - Access key expiration in seconds
+   * @param {string} [config.convertTo] - Convert uploaded file to this format before storing. Supported: 'pdf', 'tiff'. Input must be PDF, DOC, or DOCX.
+   * @param {Object} [config.convertOptions] - Options for file conversion (used with convertTo)
+   * @param {('fine'|'normal')} [config.convertOptions.resolution='fine'] - Fax resolution: 'fine' (204x196) or 'normal' (204x98)
+   * @param {('letter'|'a4')} [config.convertOptions.paperSize='letter'] - Paper size for conversion
+   * @param {('g4'|'g3')} [config.convertOptions.compression='g4'] - TIFF compression: 'g4' (default) or 'g3' for older fax machines
+   * @param {Function} [config.onProgress] - Progress callback for browser uploads
+   * @param {Object} [config._options] - Internal options
+   * @returns {Promise<Object>} Upload result with uploaded files, viruses, and errors
+   */
   async upload({
     classification = 'generic',
     folder,
@@ -389,6 +411,8 @@ Response:
     relatedId,
     createAccessKey = false,
     accessKeyExpiresIn,
+    convertTo,
+    convertOptions,
     onProgress,
     _options,
   }) {
@@ -404,6 +428,8 @@ Response:
         relatedId,
         createAccessKey,
         accessKeyExpiresIn,
+        convertTo,
+        convertOptions,
       },
       {
         classification: { type: 'string', required: false },
@@ -416,6 +442,8 @@ Response:
         relatedId: { type: 'string', required: false },
         createAccessKey: { type: 'boolean', required: false },
         accessKeyExpiresIn: { type: 'number', required: false },
+        convertTo: { type: 'string', required: false },
+        convertOptions: { type: 'object', required: false },
       },
     );
 
@@ -432,6 +460,9 @@ Response:
       formFields.push(['createAccessKey', createAccessKey.toString()]);
     if (accessKeyExpiresIn)
       formFields.push(['accessKeyExpiresIn', accessKeyExpiresIn]);
+    if (convertTo) formFields.push(['convertTo', convertTo]);
+    if (convertOptions)
+      formFields.push(['convertOptions', JSON.stringify(convertOptions)]);
 
     return this._performUpload(
       file,
@@ -889,6 +920,109 @@ Response:
       'DELETE',
     );
     return result;
+  }
+
+  /**
+   * Convert an existing stored file to a different format and save it as a new storage record.
+   * The original file remains unchanged. Supported source formats: PDF, DOC, DOCX.
+   * Supported output formats: 'pdf', 'tiff'.
+   *
+   * Fields not provided in the request (classification, folder, relatedId, isPublic)
+   * are inherited from the source file. If expireAfter is not provided, the expireAt
+   * timestamp is copied directly from the source file.
+   *
+   * @param {string} storageId - ID of the existing storage file to convert (required)
+   * @param {Object} config - Conversion options
+   * @param {string} config.convertTo - Target format: 'pdf' or 'tiff' (required)
+   * @param {Object} [config.convertOptions] - Options controlling the conversion output
+   * @param {('fine'|'normal')} [config.convertOptions.resolution='fine'] - Fax resolution: 'fine' (204x196 DPI) or 'normal' (204x98 DPI)
+   * @param {('letter'|'a4')} [config.convertOptions.paperSize='letter'] - Paper size for conversion
+   * @param {('g4'|'g3')} [config.convertOptions.compression='g4'] - TIFF compression: 'g4' (modern, default) or 'g3' (legacy fax machines)
+   * @param {string} [config.classification] - Storage classification for the new file. Defaults to source file's classification.
+   * @param {string} [config.folder] - Folder path for the new file. Defaults to source file's folder.
+   * @param {string} [config.relatedId] - Related object ID for the new file. Defaults to source file's relatedId.
+   * @param {boolean} [config.isPublic] - Whether the new file is publicly accessible. Defaults to source file's isPublic.
+   * @param {string} [config.expireAfter] - Expiration duration for the new file (e.g., '7d', '1h'). If omitted, copies expireAt from source.
+   * @param {boolean} [config.createAccessKey=false] - Generate a temporary access key for the new file
+   * @param {string} [config.accessKeyExpiresIn] - Access key expiration duration (e.g., '7d')
+   * @returns {Promise<Object>} The newly created storage record for the converted file
+   * @returns {string} result.id - Storage ID of the converted file
+   * @returns {string} result.sourceStorageId - Storage ID of the original source file
+   * @returns {string} result.fileName - File name of the converted file
+   * @returns {number} result.fileSize - Size in bytes of the converted file
+   * @returns {string} result.url - URL to access the converted file
+   * @returns {string} result.mimeType - MIME type of the converted file
+   * @returns {string[]} result.s3Regions - Regions where the converted file is stored
+   * @returns {boolean} result.isPublic - Whether the converted file is public
+   * @returns {string} [result.expireAt] - Expiration timestamp if set
+   * @returns {string} [result.accessKey] - Access key if createAccessKey was true
+   *
+   * @example
+   * // Convert a stored PDF to TIFF for fax transmission
+   * const result = await sdk.storage.convertFile('017d01...', {
+   *   convertTo: 'tiff',
+   *   convertOptions: {
+   *     resolution: 'fine',
+   *     paperSize: 'letter',
+   *     compression: 'g4',
+   *   },
+   * });
+   * console.log(result.id);           // new storage ID for the TIFF
+   * console.log(result.sourceStorageId); // original PDF storage ID
+   *
+   * @example
+   * // Convert a DOCX to PDF, overriding the classification and folder
+   * const result = await sdk.storage.convertFile('017d02...', {
+   *   convertTo: 'pdf',
+   *   classification: 'fax',
+   *   folder: 'outbound/2026',
+   * });
+   */
+  async convertFile(
+    storageId,
+    {
+      convertTo,
+      convertOptions,
+      classification,
+      folder,
+      relatedId,
+      isPublic,
+      expireAfter,
+      createAccessKey,
+      accessKeyExpiresIn,
+    } = {},
+  ) {
+    this.sdk.validateParams(
+      { storageId, convertTo },
+      {
+        storageId: { type: 'string', required: true },
+        convertTo: { type: 'string', required: true },
+        convertOptions: { type: 'object', required: false },
+        classification: { type: 'string', required: false },
+        folder: { type: 'string', required: false },
+        relatedId: { type: 'string', required: false },
+        isPublic: { type: 'boolean', required: false },
+        expireAfter: { type: 'string', required: false },
+        createAccessKey: { type: 'boolean', required: false },
+        accessKeyExpiresIn: { type: 'string', required: false },
+      },
+    );
+
+    const body = { convertTo };
+    if (convertOptions !== undefined)
+      body.convertOptions = convertOptions;
+    if (classification !== undefined) body.classification = classification;
+    if (folder !== undefined) body.folder = folder;
+    if (relatedId !== undefined) body.relatedId = relatedId;
+    if (isPublic !== undefined) body.isPublic = isPublic;
+    if (expireAfter !== undefined) body.expireAfter = expireAfter;
+    if (createAccessKey !== undefined) body.createAccessKey = createAccessKey;
+    if (accessKeyExpiresIn !== undefined)
+      body.accessKeyExpiresIn = accessKeyExpiresIn;
+
+    const params = { body };
+
+    return await this.sdk._fetch(`/storage/${storageId}/convert`, 'POST', params);
   }
 
   /**

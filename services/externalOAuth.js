@@ -122,4 +122,49 @@ export class ExternalOAuthService {
     const result = await this.sdk._fetch('/externalOAuth', 'GET');
     return result;
   }
+
+  async listUnified() {
+    const result = await this.sdk._fetch('/externalOAuth/unified', 'GET');
+    return result;
+  }
+
+  async providers() {
+    const result = await this.sdk._fetch('/externalOAuth/providers', 'GET');
+    return result;
+  }
+
+  async authorize({
+    name,
+    provider,
+    clientId,
+    clientSecret,
+    scopes,
+    authorizationUrl,
+    tokenUrl,
+  }) {
+    this.sdk.validateParams(
+      { name, provider },
+      {
+        name: { type: 'string', required: true },
+        provider: { type: 'string', required: true },
+        clientId: { type: 'string', required: false },
+        clientSecret: { type: 'string', required: false },
+        scopes: { type: 'array', required: false },
+        authorizationUrl: { type: 'string', required: false },
+        tokenUrl: { type: 'string', required: false },
+      },
+    );
+
+    const body = { name, provider };
+    if (clientId) body.clientId = clientId;
+    if (clientSecret) body.clientSecret = clientSecret;
+    if (scopes) body.scopes = scopes;
+    if (authorizationUrl) body.authorizationUrl = authorizationUrl;
+    if (tokenUrl) body.tokenUrl = tokenUrl;
+
+    const result = await this.sdk._fetch('/externalOAuth/authorize', 'POST', {
+      body,
+    });
+    return result;
+  }
 }

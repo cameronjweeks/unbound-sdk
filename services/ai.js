@@ -20,6 +20,7 @@ export class GenerativeService {
     prompt,
     messages,
     systemPrompt,
+    appendSystemPrompt,
     relatedId,
     peopleId,
     companyId,
@@ -53,6 +54,7 @@ export class GenerativeService {
         prompt,
         messages,
         systemPrompt,
+        appendSystemPrompt,
         isPlayground,
         responseFormat,
         sessionId,
@@ -72,6 +74,7 @@ export class GenerativeService {
         prompt: { type: 'string', required: false },
         messages: { type: 'array', required: false },
         systemPrompt: { type: 'string', required: false },
+        appendSystemPrompt: { type: 'string', required: false },
         provider: { type: 'string', required: false },
         model: { type: 'string', required: false },
         temperature: { type: 'number', required: false },
@@ -101,6 +104,7 @@ export class GenerativeService {
         prompt,
         messages,
         systemPrompt,
+        appendSystemPrompt,
         relatedId,
         peopleId,
         companyId,
@@ -143,6 +147,79 @@ export class GenerativeService {
       'POST',
       params,
       forceFetch,
+    );
+    return result;
+  }
+
+  /**
+   * Clone an existing chat session into a new one, importing conversation context.
+   * Filters out system prompts and tool calls, keeps user/assistant turns.
+   * If the transcript exceeds ~50k tokens it is summarized automatically.
+   *
+   * @param {Object} options
+   * @param {string} options.sourceSessionId - Session to clone from (required)
+   * @param {string} [options.systemPrompt] - New system prompt (appended after conversation context)
+   * @param {string} [options.provider] - LLM provider (falls back to source session)
+   * @param {string} [options.model] - Model ID (falls back to source session)
+   * @param {Array}  [options.tools] - Tool names (falls back to source session)
+   * @param {Object} [options.toolConfig] - Tool config (falls back to source session)
+   * @param {string} [options.scope] - 'user' or 'account'
+   * @param {string} [options.userId] - Owner user ID
+   * @param {string} [options.peopleId] - Linked people record
+   * @param {string} [options.companyId] - Linked company record
+   * @param {string} [options.relatedId] - Linked related record
+   * @returns {Promise<Object>} { id, sourceSessionId, wasSummarized }
+   */
+  async cloneSession({
+    sourceSessionId,
+    systemPrompt,
+    provider,
+    model,
+    tools,
+    toolConfig,
+    scope,
+    userId,
+    peopleId,
+    companyId,
+    relatedId,
+  }) {
+    this.sdk.validateParams(
+      { sourceSessionId },
+      {
+        sourceSessionId: { type: 'string', required: true },
+        systemPrompt: { type: 'string', required: false },
+        provider: { type: 'string', required: false },
+        model: { type: 'string', required: false },
+        tools: { type: 'array', required: false },
+        toolConfig: { type: 'object', required: false },
+        scope: { type: 'string', required: false },
+        userId: { type: 'string', required: false },
+        peopleId: { type: 'string', required: false },
+        companyId: { type: 'string', required: false },
+        relatedId: { type: 'string', required: false },
+      },
+    );
+
+    const params = {
+      body: {
+        sourceSessionId,
+        systemPrompt,
+        provider,
+        model,
+        tools,
+        toolConfig,
+        scope,
+        userId,
+        peopleId,
+        companyId,
+        relatedId,
+      },
+    };
+
+    const result = await this.sdk._fetch(
+      '/ai/generative/chat/clone',
+      'POST',
+      params,
     );
     return result;
   }

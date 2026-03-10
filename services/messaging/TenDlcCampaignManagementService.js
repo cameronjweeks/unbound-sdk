@@ -31,71 +31,165 @@ export class TenDlcCampaignManagementService {
   }
 
   /**
-   * Create a new 10DLC campaign
+   * Create a new 10DLC campaign draft
    * @param {Object} params - Campaign parameters
+   * @param {string} params.name - Campaign name (required)
    * @param {string} params.brandId - Brand ID (required)
-   * @param {string} params.description - Campaign description (required)
-   * @param {string} params.messageFlow - Message flow description (required)
-   * @param {string} [params.helpMessage] - Help message
-   * @param {string} [params.optInMessage] - Opt-in message
-   * @param {string} [params.optOutMessage] - Opt-out message
+   * @param {string} [params.description] - Campaign description
+   * @param {string} [params.messageFlow] - How users opt in
    * @param {string} [params.useCase] - Use case category
+   * @param {string[]} [params.samples] - Sample messages (2-5)
+   * @param {boolean} [params.autoRenewal] - Auto-renew campaign
    * @param {string} [params.vertical] - Vertical category
+   * @param {string[]} [params.subUseCases] - Sub use cases
+   * @param {string} [params.helpMessage] - Response to HELP keyword
+   * @param {string[]} [params.helpKeywords] - Help keywords
+   * @param {string} [params.optInMessage] - Opt-in message
+   * @param {string[]} [params.optInKeywords] - Opt-in keywords
+   * @param {string} [params.optOutMessage] - Opt-out message
+   * @param {string[]} [params.optOutKeywords] - Opt-out keywords
+   * @param {boolean} [params.affiliateMarketing] - Affiliate marketing
+   * @param {boolean} [params.ageGated] - Age gated content
+   * @param {boolean} [params.directLending] - Direct lending
+   * @param {boolean} [params.embeddedLink] - Messages contain URLs
+   * @param {boolean} [params.embeddedPhone] - Messages contain phone numbers
+   * @param {boolean} [params.numberPool] - Using number pool
+   * @param {boolean} [params.subscriberHelp] - HELP keyword supported
+   * @param {boolean} [params.subscriberOptin] - Subscribers opted in
+   * @param {boolean} [params.subscriberOptout] - Subscribers can opt out
+   * @param {boolean} [params.termsAndConditions] - T&C accepted
+   * @param {string[]} [params.mnoIds] - MNO IDs
+   * @param {string} [params.referenceId] - Custom reference ID
    * @returns {Promise<Object>} Created campaign details
    */
   async create({
+    name,
     brandId,
     description,
     messageFlow,
-    helpMessage,
-    optInMessage,
-    optOutMessage,
     useCase,
+    samples,
+    autoRenewal,
     vertical,
+    subUseCases,
+    helpMessage,
+    helpKeywords,
+    optInMessage,
+    optInKeywords,
+    optOutMessage,
+    optOutKeywords,
+    affiliateMarketing,
+    ageGated,
+    directLending,
+    embeddedLink,
+    embeddedPhone,
+    numberPool,
+    subscriberHelp,
+    subscriberOptin,
+    subscriberOptout,
+    termsAndConditions,
+    mnoIds,
+    referenceId,
   }) {
     this.sdk.validateParams(
+      { name, brandId },
       {
-        brandId,
-        description,
-        messageFlow,
-        helpMessage,
-        optInMessage,
-        optOutMessage,
-        useCase,
-        vertical,
-      },
-      {
+        name: { type: 'string', required: true },
         brandId: { type: 'string', required: true },
-        description: { type: 'string', required: true },
-        messageFlow: { type: 'string', required: true },
-        helpMessage: { type: 'string', required: false },
-        optInMessage: { type: 'string', required: false },
-        optOutMessage: { type: 'string', required: false },
-        useCase: { type: 'string', required: false },
-        vertical: { type: 'string', required: false },
       },
     );
 
     const campaignData = {
+      name,
       brandId,
       description,
       messageFlow,
+      useCase,
+      samples,
     };
 
-    if (helpMessage !== undefined) campaignData.helpMessage = helpMessage;
-    if (optInMessage !== undefined) campaignData.optInMessage = optInMessage;
-    if (optOutMessage !== undefined) campaignData.optOutMessage = optOutMessage;
-    if (useCase !== undefined) campaignData.useCase = useCase;
+    if (autoRenewal !== undefined) campaignData.autoRenewal = autoRenewal;
     if (vertical !== undefined) campaignData.vertical = vertical;
-
-    const options = {
-      body: campaignData,
-    };
+    if (subUseCases !== undefined) campaignData.subUseCases = subUseCases;
+    if (helpMessage !== undefined) campaignData.helpMessage = helpMessage;
+    if (helpKeywords !== undefined) campaignData.helpKeywords = helpKeywords;
+    if (optInMessage !== undefined) campaignData.optInMessage = optInMessage;
+    if (optInKeywords !== undefined) campaignData.optInKeywords = optInKeywords;
+    if (optOutMessage !== undefined) campaignData.optOutMessage = optOutMessage;
+    if (optOutKeywords !== undefined)
+      campaignData.optOutKeywords = optOutKeywords;
+    if (affiliateMarketing !== undefined)
+      campaignData.affiliateMarketing = affiliateMarketing;
+    if (ageGated !== undefined) campaignData.ageGated = ageGated;
+    if (directLending !== undefined) campaignData.directLending = directLending;
+    if (embeddedLink !== undefined) campaignData.embeddedLink = embeddedLink;
+    if (embeddedPhone !== undefined) campaignData.embeddedPhone = embeddedPhone;
+    if (numberPool !== undefined) campaignData.numberPool = numberPool;
+    if (subscriberHelp !== undefined)
+      campaignData.subscriberHelp = subscriberHelp;
+    if (subscriberOptin !== undefined)
+      campaignData.subscriberOptin = subscriberOptin;
+    if (subscriberOptout !== undefined)
+      campaignData.subscriberOptout = subscriberOptout;
+    if (termsAndConditions !== undefined)
+      campaignData.termsAndConditions = termsAndConditions;
+    if (mnoIds !== undefined) campaignData.mnoIds = mnoIds;
+    if (referenceId !== undefined) campaignData.referenceId = referenceId;
 
     const result = await this.sdk._fetch(
       '/messaging/campaigns/10dlc/campaign',
       'POST',
-      options,
+      { body: campaignData },
+    );
+    return result;
+  }
+
+  /**
+   * Submit a draft 10DLC campaign to TCR for registration
+   * @param {string} campaignId - Campaign ID to submit
+   * @param {Object} params - Submit parameters
+   * @param {boolean} params.termsAndConditions - Must be true to accept carrier T&C
+   * @returns {Promise<Object>} Submission result with campaign status
+   */
+  async submit(campaignId, { termsAndConditions } = {}) {
+    this.sdk.validateParams(
+      { campaignId, termsAndConditions },
+      {
+        campaignId: { type: 'string', required: true },
+        termsAndConditions: { type: 'boolean', required: true },
+      },
+    );
+
+    const result = await this.sdk._fetch(
+      `/messaging/campaigns/10dlc/campaign/${campaignId}/submit`,
+      'POST',
+      { body: { termsAndConditions } },
+    );
+    return result;
+  }
+
+  /**
+   * Duplicate an existing campaign as a new Draft
+   * @param {string} campaignId - Source campaign ID to copy from
+   * @param {Object} [params] - Optional parameters
+   * @param {string} [params.name] - Name for the new campaign (defaults to "Original Name (Copy)")
+   * @returns {Promise<Object>} New draft campaign details
+   */
+  async duplicate(campaignId, { name } = {}) {
+    this.sdk.validateParams(
+      { campaignId },
+      {
+        campaignId: { type: 'string', required: true },
+      },
+    );
+
+    const body = {};
+    if (name !== undefined) body.name = name;
+
+    const result = await this.sdk._fetch(
+      `/messaging/campaigns/10dlc/campaign/${campaignId}/duplicate`,
+      'POST',
+      { body },
     );
     return result;
   }
@@ -124,25 +218,30 @@ export class TenDlcCampaignManagementService {
    * @param {Object} params - Update parameters
    * @param {string} [params.name] - Campaign name
    * @param {string} [params.description] - Campaign description
-   * @param {string} [params.messageFlow] - Message flow description
-   * @param {Array<string>} [params.samples] - Sample messages (up to 4)
+   * @param {string} [params.messageFlow] - How users opt in
+   * @param {string} [params.useCase] - Use case category
+   * @param {string} [params.vertical] - Vertical category
+   * @param {string[]} [params.samples] - Sample messages (up to 5)
+   * @param {string[]} [params.subUseCases] - Sub use cases
    * @param {string} [params.webhookUrl] - Webhook URL
-   * @param {string} [params.helpMessage] - Help message
+   * @param {string} [params.helpMessage] - Response to HELP keyword
+   * @param {string[]} [params.helpKeywords] - Help keywords
    * @param {string} [params.optInMessage] - Opt-in message
+   * @param {string[]} [params.optInKeywords] - Opt-in keywords
    * @param {string} [params.optOutMessage] - Opt-out message
-   * @param {string} [params.helpKeywords] - Help keywords (comma-separated)
-   * @param {string} [params.optinKeywords] - Opt-in keywords (comma-separated)
-   * @param {string} [params.optoutKeywords] - Opt-out keywords (comma-separated)
-   * @param {boolean} [params.affiliateMarketing] - Affiliate marketing flag
-   * @param {boolean} [params.ageGated] - Age gated content flag
-   * @param {boolean} [params.directLending] - Direct lending flag
-   * @param {boolean} [params.embeddedLink] - Embedded links flag
-   * @param {boolean} [params.embeddedPhone] - Embedded phone numbers flag
-   * @param {boolean} [params.numberPool] - Number pool usage flag
-   * @param {boolean} [params.autoRenewal] - Auto-renewal flag
-   * @param {boolean} [params.subscriberHelp] - Subscriber help support flag
-   * @param {boolean} [params.subscriberOptin] - Subscriber opt-in requirement flag
-   * @param {boolean} [params.subscriberOptout] - Subscriber opt-out support flag
+   * @param {string[]} [params.optOutKeywords] - Opt-out keywords
+   * @param {boolean} [params.affiliateMarketing] - Affiliate marketing
+   * @param {boolean} [params.ageGated] - Age gated content
+   * @param {boolean} [params.directLending] - Direct lending
+   * @param {boolean} [params.embeddedLink] - Messages contain URLs
+   * @param {boolean} [params.embeddedPhone] - Messages contain phone numbers
+   * @param {boolean} [params.numberPool] - Using number pool
+   * @param {boolean} [params.autoRenewal] - Auto-renew campaign
+   * @param {boolean} [params.subscriberHelp] - HELP keyword supported
+   * @param {boolean} [params.subscriberOptin] - Subscribers opted in
+   * @param {boolean} [params.subscriberOptout] - Subscribers can opt out
+   * @param {boolean} [params.termsAndConditions] - T&C accepted
+   * @param {string[]} [params.mnoIds] - MNO IDs
    * @returns {Promise<Object>} Updated campaign information
    */
   async update(
@@ -151,14 +250,17 @@ export class TenDlcCampaignManagementService {
       name,
       description,
       messageFlow,
+      useCase,
+      vertical,
       samples,
+      subUseCases,
       webhookUrl,
       helpMessage,
-      optInMessage,
-      optOutMessage,
       helpKeywords,
-      optinKeywords,
-      optoutKeywords,
+      optInMessage,
+      optInKeywords,
+      optOutMessage,
+      optOutKeywords,
       affiliateMarketing,
       ageGated,
       directLending,
@@ -169,56 +271,14 @@ export class TenDlcCampaignManagementService {
       subscriberHelp,
       subscriberOptin,
       subscriberOptout,
+      termsAndConditions,
+      mnoIds,
     } = {},
   ) {
     this.sdk.validateParams(
-      {
-        campaignId,
-        name,
-        description,
-        messageFlow,
-        samples,
-        webhookUrl,
-        helpMessage,
-        optInMessage,
-        optOutMessage,
-        helpKeywords,
-        optinKeywords,
-        optoutKeywords,
-        affiliateMarketing,
-        ageGated,
-        directLending,
-        embeddedLink,
-        embeddedPhone,
-        numberPool,
-        autoRenewal,
-        subscriberHelp,
-        subscriberOptin,
-        subscriberOptout,
-      },
+      { campaignId },
       {
         campaignId: { type: 'string', required: true },
-        name: { type: 'string', required: false },
-        description: { type: 'string', required: false },
-        messageFlow: { type: 'string', required: false },
-        samples: { type: 'array', required: false },
-        webhookUrl: { type: 'string', required: false },
-        helpMessage: { type: 'string', required: false },
-        optInMessage: { type: 'string', required: false },
-        optOutMessage: { type: 'string', required: false },
-        helpKeywords: { type: 'array', required: false },
-        optinKeywords: { type: 'array', required: false },
-        optoutKeywords: { type: 'array', required: false },
-        affiliateMarketing: { type: 'boolean', required: false },
-        ageGated: { type: 'boolean', required: false },
-        directLending: { type: 'boolean', required: false },
-        embeddedLink: { type: 'boolean', required: false },
-        embeddedPhone: { type: 'boolean', required: false },
-        numberPool: { type: 'boolean', required: false },
-        autoRenewal: { type: 'boolean', required: false },
-        subscriberHelp: { type: 'boolean', required: false },
-        subscriberOptin: { type: 'boolean', required: false },
-        subscriberOptout: { type: 'boolean', required: false },
       },
     );
 
@@ -226,15 +286,18 @@ export class TenDlcCampaignManagementService {
     if (name !== undefined) updateData.name = name;
     if (description !== undefined) updateData.description = description;
     if (messageFlow !== undefined) updateData.messageFlow = messageFlow;
+    if (useCase !== undefined) updateData.useCase = useCase;
+    if (vertical !== undefined) updateData.vertical = vertical;
     if (samples !== undefined) updateData.samples = samples;
+    if (subUseCases !== undefined) updateData.subUseCases = subUseCases;
     if (webhookUrl !== undefined) updateData.webhookUrl = webhookUrl;
     if (helpMessage !== undefined) updateData.helpMessage = helpMessage;
-    if (optInMessage !== undefined) updateData.optInMessage = optInMessage;
-    if (optOutMessage !== undefined) updateData.optOutMessage = optOutMessage;
     if (helpKeywords !== undefined) updateData.helpKeywords = helpKeywords;
-    if (optinKeywords !== undefined) updateData.optinKeywords = optinKeywords;
-    if (optoutKeywords !== undefined)
-      updateData.optoutKeywords = optoutKeywords;
+    if (optInMessage !== undefined) updateData.optInMessage = optInMessage;
+    if (optInKeywords !== undefined) updateData.optInKeywords = optInKeywords;
+    if (optOutMessage !== undefined) updateData.optOutMessage = optOutMessage;
+    if (optOutKeywords !== undefined)
+      updateData.optOutKeywords = optOutKeywords;
     if (affiliateMarketing !== undefined)
       updateData.affiliateMarketing = affiliateMarketing;
     if (ageGated !== undefined) updateData.ageGated = ageGated;
@@ -249,15 +312,14 @@ export class TenDlcCampaignManagementService {
       updateData.subscriberOptin = subscriberOptin;
     if (subscriberOptout !== undefined)
       updateData.subscriberOptout = subscriberOptout;
-
-    const options = {
-      body: updateData,
-    };
+    if (termsAndConditions !== undefined)
+      updateData.termsAndConditions = termsAndConditions;
+    if (mnoIds !== undefined) updateData.mnoIds = mnoIds;
 
     const result = await this.sdk._fetch(
       `/messaging/campaigns/10dlc/campaign/${campaignId}`,
       'PUT',
-      options,
+      { body: updateData },
     );
     return result;
   }
@@ -311,6 +373,26 @@ export class TenDlcCampaignManagementService {
 
     const result = await this.sdk._fetch(
       `/messaging/campaigns/10dlc/campaign/${campaignId}/mnoMetaData`,
+      'GET',
+    );
+    return result;
+  }
+
+  /**
+   * List phone numbers assigned to a campaign
+   * @param {string} campaignId - Campaign ID
+   * @returns {Promise<Array>} List of phone numbers with linking status
+   */
+  async listPhoneNumbers(campaignId) {
+    this.sdk.validateParams(
+      { campaignId },
+      {
+        campaignId: { type: 'string', required: true },
+      },
+    );
+
+    const result = await this.sdk._fetch(
+      `/messaging/campaigns/10dlc/campaign/${campaignId}/phoneNumbers`,
       'GET',
     );
     return result;

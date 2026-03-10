@@ -3,6 +3,28 @@ export class PortalsService {
     this.sdk = sdk;
   }
 
+  /**
+   * Creates a new portal for the authenticated account.
+   *
+   * @param {object} params
+   * @param {string} params.name - Display name of the portal.
+   * @param {string} params.domain - Custom domain for the portal (e.g. `portal.example.com`).
+   *   A CNAME DNS record pointing to the platform's portal host is required.
+   * @param {object} [params.settings] - Optional portal configuration settings.
+   * @param {boolean} [params.isPublic] - Whether the portal is publicly accessible without
+   *   authentication. Defaults to private if omitted.
+   * @param {string} [params.customCss] - Optional custom CSS injected into the portal.
+   * @param {string} [params.customJs] - Optional custom JavaScript injected into the portal.
+   * @param {string} [params.favicon] - Optional URL or asset reference for the portal favicon.
+   * @param {string} [params.logo] - Optional URL or asset reference for the portal logo.
+   * @returns {Promise<{
+   *   id: string,
+   *   accountId: string,
+   *   name: string,
+   *   domain: string,
+   *   dns: Array<{ type: string, name: string, value: string, description: string }>
+   * }>} The newly created portal, including DNS records needed to configure the custom domain.
+   */
   async create({
     name,
     domain,
@@ -43,6 +65,29 @@ export class PortalsService {
     return result;
   }
 
+  /**
+   * Updates an existing portal's properties.
+   *
+   * Only the fields provided will be updated; omitted fields are left unchanged.
+   *
+   * @param {string} portalId - The ID of the portal to update.
+   * @param {object} updates
+   * @param {string} [updates.name] - New display name for the portal.
+   * @param {string} [updates.domain] - New custom domain for the portal.
+   * @param {object} [updates.settings] - Updated portal configuration settings.
+   * @param {boolean} [updates.isPublic] - Updated public accessibility flag.
+   * @param {string} [updates.customCss] - Updated custom CSS for the portal.
+   * @param {string} [updates.customJs] - Updated custom JavaScript for the portal.
+   * @param {string} [updates.favicon] - Updated favicon URL or asset reference.
+   * @param {string} [updates.logo] - Updated logo URL or asset reference.
+   * @returns {Promise<{
+   *   id: string,
+   *   updatedBy: string,
+   *   updatedAt: string,
+   *   name?: string,
+   *   domain?: string
+   * }>} The updated portal fields along with audit metadata.
+   */
   async update(
     portalId,
     { name, domain, settings, isPublic, customCss, customJs, favicon, logo },
@@ -80,6 +125,12 @@ export class PortalsService {
     return result;
   }
 
+  /**
+   * Deletes a portal by ID.
+   *
+   * @param {string} portalId - The ID of the portal to delete.
+   * @returns {Promise<{ message: string }>} Confirmation message on success.
+   */
   async delete(portalId) {
     this.sdk.validateParams(
       { portalId },
@@ -92,6 +143,12 @@ export class PortalsService {
     return result;
   }
 
+  /**
+   * Retrieves a portal by ID.
+   *
+   * @param {string} portalId - The ID of the portal to retrieve.
+   * @returns {Promise<object>} The full portal record.
+   */
   async get(portalId) {
     this.sdk.validateParams(
       { portalId },
@@ -104,6 +161,17 @@ export class PortalsService {
     return result;
   }
 
+  /**
+   * Retrieves public portal information by domain.
+   *
+   * This is an unauthenticated endpoint used by portal front-ends to look up
+   * their own configuration based on the domain they are served from.
+   *
+   * @param {string} domain - The custom domain of the portal to look up
+   *   (e.g. `portal.example.com`).
+   * @returns {Promise<{ id: string, name: string, domain: string }>}
+   *   The public-facing portal fields. Sensitive account data is excluded.
+   */
   async getPublic(domain) {
     this.sdk.validateParams(
       { domain },
@@ -120,11 +188,32 @@ export class PortalsService {
     return result;
   }
 
+  /**
+   * Lists all portals belonging to the authenticated account.
+   *
+   * @returns {Promise<{ portals: object[] }>} An object containing an array of portal records.
+   */
   async list() {
     const result = await this.sdk._fetch('/portals', 'GET');
     return result;
   }
 
+  /**
+   * Verifies that a portal's custom domain has the correct DNS configuration.
+   *
+   * Checks that the domain has a valid CNAME record pointing to the platform's
+   * portal host. Use the `dns` records returned from `create()` to know the
+   * expected target value.
+   *
+   * @param {string} portalId - The ID of the portal whose DNS should be verified.
+   * @returns {Promise<{
+   *   portalId: string,
+   *   domain: string,
+   *   expectedTarget: string,
+   *   dns: object
+   * }>} The DNS verification result, including the expected CNAME target and
+   *   the actual resolution details.
+   */
   async verifyDns(portalId) {
     this.sdk.validateParams(
       { portalId },
