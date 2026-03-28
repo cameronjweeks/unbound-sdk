@@ -199,6 +199,8 @@ export class PlaybooksService {
     scoreType,
     weight,
     requiredForPass,
+    role,
+    signal,
     recordTypeId,
   }) {
     this.sdk.validateParams(
@@ -211,6 +213,8 @@ export class PlaybooksService {
         scoreType,
         weight,
         requiredForPass,
+        role,
+        signal,
         recordTypeId,
       },
       {
@@ -222,6 +226,8 @@ export class PlaybooksService {
         scoreType: { type: 'string', required: false },
         weight: { type: 'number', required: false },
         requiredForPass: { type: 'boolean', required: false },
+        role: { type: 'string', required: false },
+        signal: { type: 'string', required: false },
         recordTypeId: { type: 'string', required: false },
       },
     );
@@ -235,6 +241,8 @@ export class PlaybooksService {
         scoreType,
         weight,
         requiredForPass,
+        role,
+        signal,
         recordTypeId,
       },
     };
@@ -334,6 +342,8 @@ export class PlaybooksService {
     scoreType,
     weight,
     requiredForPass,
+    role,
+    signal,
     recordTypeId,
   }) {
     this.sdk.validateParams(
@@ -346,6 +356,8 @@ export class PlaybooksService {
         scoreType,
         weight,
         requiredForPass,
+        role,
+        signal,
         recordTypeId,
       },
       {
@@ -357,6 +369,8 @@ export class PlaybooksService {
         scoreType: { type: 'string', required: false },
         weight: { type: 'number', required: false },
         requiredForPass: { type: 'boolean', required: false },
+        role: { type: 'string', required: false },
+        signal: { type: 'string', required: false },
         recordTypeId: { type: 'string', required: false },
       },
     );
@@ -370,6 +384,8 @@ export class PlaybooksService {
         scoreType,
         weight,
         requiredForPass,
+        role,
+        signal,
         recordTypeId,
       },
     };
@@ -474,6 +490,8 @@ export class PlaybooksService {
     description,
     keywords,
     recommendedPhase,
+    role,
+    signal,
     recordTypeId,
   }) {
     this.sdk.validateParams(
@@ -483,12 +501,14 @@ export class PlaybooksService {
         description: { type: 'string', required: false },
         keywords: { type: 'array', required: false },
         recommendedPhase: { type: 'string', required: false },
+        role: { type: 'string', required: false },
+        signal: { type: 'string', required: false },
         recordTypeId: { type: 'string', required: false },
       },
     );
 
     const params = {
-      body: { name, description, keywords, recommendedPhase, recordTypeId },
+      body: { name, description, keywords, recommendedPhase, role, signal, recordTypeId },
     };
 
     const result = await this.sdk._fetch(
@@ -587,6 +607,8 @@ export class PlaybooksService {
     description,
     keywords,
     recommendedPhase,
+    role,
+    signal,
     recordTypeId,
   }) {
     this.sdk.validateParams(
@@ -597,12 +619,14 @@ export class PlaybooksService {
         description: { type: 'string', required: false },
         keywords: { type: 'array', required: false },
         recommendedPhase: { type: 'string', required: false },
+        role: { type: 'string', required: false },
+        signal: { type: 'string', required: false },
         recordTypeId: { type: 'string', required: false },
       },
     );
 
     const params = {
-      body: { name, description, keywords, recommendedPhase, recordTypeId },
+      body: { name, description, keywords, recommendedPhase, role, signal, recordTypeId },
     };
 
     const result = await this.sdk._fetch(
@@ -828,6 +852,9 @@ export class PlaybooksService {
     totalScore,
     achievedGoals,
     totalGoals,
+    customerTotalScore,
+    customerAchievedGoals,
+    customerTotalGoals,
   }) {
     this.sdk.validateParams(
       { sessionId },
@@ -837,6 +864,9 @@ export class PlaybooksService {
         totalScore: { type: 'number', required: false },
         achievedGoals: { type: 'number', required: false },
         totalGoals: { type: 'number', required: false },
+        customerTotalScore: { type: 'number', required: false },
+        customerAchievedGoals: { type: 'number', required: false },
+        customerTotalGoals: { type: 'number', required: false },
       },
     );
 
@@ -846,6 +876,9 @@ export class PlaybooksService {
         totalScore,
         achievedGoals,
         totalGoals,
+        customerTotalScore,
+        customerAchievedGoals,
+        customerTotalGoals,
       },
     };
 
@@ -923,6 +956,7 @@ export class PlaybooksService {
     reason,
     confidence,
     evidence,
+    role,
   }) {
     this.sdk.validateParams(
       { sessionId, goalId },
@@ -934,6 +968,7 @@ export class PlaybooksService {
         reason: { type: 'string', required: false },
         confidence: { type: 'number', required: false },
         evidence: { type: 'array', required: false },
+        role: { type: 'string', required: false },
       },
     );
 
@@ -945,6 +980,7 @@ export class PlaybooksService {
         reason,
         confidence,
         evidence,
+        role,
       },
     };
 
