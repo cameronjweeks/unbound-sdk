@@ -24,11 +24,12 @@ export class BaseSDK {
       this.fwRequestId = arguments[3];
     } else {
       // New object-based parameters
-      const { namespace, callId, token, fwRequestId } = options;
+      const { namespace, callId, token, fwRequestId, baseURL } = options;
       this.namespace = namespace || process?.env?.namespace;
       this.callId = callId;
       this.token = token;
       this.fwRequestId = fwRequestId;
+      this._constructorBaseURL = baseURL;
     }
     this.baseURL;
     this.transports = new Map();
@@ -42,16 +43,24 @@ export class BaseSDK {
     if (typeof window === 'undefined') {
       // Server-side (Node.js)
       this.environment = 'node';
-      this.baseURL = `https://${this.namespace ? this.namespace : 'login'}.${
+      this.baseURL = this._constructorBaseURL || `https://${this.namespace ? this.namespace : 'login'}.${
         process.env?.API_BASE_URL || defaultDomain
       }`;
     } else {
       // Client-side (browser)
       this.environment = 'browser';
-      this.baseUrl =
-        this.baseUrl || process?.env?.API_BASE_URL || defaultDomain;
-      if (this.baseUrl && !this.baseUrl.startsWith('api.')) {
-        this.baseUrl = `api.${this.baseUrl}`;
+      if (this._constructorBaseURL) {
+        // Use the baseURL passed to the constructor
+        this.baseURL = this._constructorBaseURL;
+        // Extract baseUrl for setNamespace compatibility
+        const url = new URL(this._constructorBaseURL);
+        this.baseUrl = url.hostname.replace(/^[^.]+\./, '');
+      } else {
+        this.baseUrl =
+          this.baseUrl || process?.env?.API_BASE_URL || defaultDomain;
+        if (this.baseUrl && !this.baseUrl.startsWith('api.')) {
+          this.baseUrl = `api.${this.baseUrl}`;
+        }
       }
       this.setNamespace(this.namespace);
     }
@@ -66,9 +75,11 @@ export class BaseSDK {
     const defaultDomain = 'api.unbound.cx';
 
     if (this.environment === 'node') {
-      this.baseURL = `https://${this.namespace ? this.namespace : 'login'}.${
-        process.env?.API_BASE_URL || defaultDomain
-      }`;
+      if (!this._constructorBaseURL) {
+        this.baseURL = `https://${this.namespace ? this.namespace : 'login'}.${
+          process.env?.API_BASE_URL || defaultDomain
+        }`;
+      }
     } else {
       this.fullUrl = `https://${this.namespace}.${this.baseUrl}`;
     }
