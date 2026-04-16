@@ -59,7 +59,7 @@
   },
   "scripts": {
     "build": "echo 'Build complete - ESM modules ready'",
-    "test": "echo 'Tests would run here'",
+    "test": "node --test 'test/*.test.js'",
     "lint": "echo 'Linting would run here'",
     "prepublishOnly": "npm run build"
   },
