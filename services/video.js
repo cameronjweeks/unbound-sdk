@@ -503,6 +503,27 @@ export class VideoService {
     return result;
   }
 
+  /**
+   * Validate a guest JWT for a video room. Used by app1-socket's
+   * `authorizeVideoSocketConnection` middleware during the `/video` Socket.IO
+   * handshake to decide whether to admit the connection.
+   *
+   * @param {string} id - videoRoom id (must match the token's `roomId` claim)
+   * @param {string} [token] - raw JWT. Omit to let the server read it from
+   *   the `videoAuthToken` cookie on the SDK's request.
+   * @returns {Promise<{
+   *   valid: boolean,
+   *   account: { id: string, namespace: string, accountCode: string },
+   *   participant: Object,
+   *   token: { id: string, type: 'videoRoomGuest', expiresAt: string },
+   *   videoRoom: Object,
+   *   podName: string,
+   * }>} The `podName` field (added with centralized signaling) is the
+   * video-server pod assigned to this room at token-mint time, re-validated
+   * against app1-api's live podRegistry. If the pod is no longer alive the
+   * server returns HTTP 409 `POD_UNAVAILABLE` — the client reacts by calling
+   * `/video/rooms/:id/join` for a fresh assignment.
+   */
   async validateGuestToken(id, token) {
     this.sdk.validateParams(
       { id, token },
@@ -520,6 +541,52 @@ export class VideoService {
       `/video/${id}/validate`,
       'POST',
       params,
+    );
+    return result;
+  }
+
+  /**
+   * Construct a `VideoMeetingClient` configured for this SDK instance.
+   *
+   * Dynamically imports `@unboundcx/video-sdk-client` so WebRTC peer deps
+   * (`mediasoup-client`, `socket.io-client`) stay out of backend bundles that
+   * never touch video. Returns a client with `this` SDK injected so it can
+   * transparently call `sdk.video.joinRoom()` for reassignment recovery and
+   * `sdk.video.endSession()` on leave.
+   *
+   * **Bundler note**: SvelteKit/Vite handle the dynamic import natively. If
+   * you use a bundler that eagerly resolves imports, pin the import path or
+   * ensure the package is marked external.
+   *
+   * @param {Object} [options] - Forwarded to the `VideoMeetingClient` constructor
+   * @returns {Promise<import('@unboundcx/video-sdk-client').VideoMeetingClient>}
+   */
+  async createMeetingClient(options = {}) {
+    const { VideoMeetingClient } = await import('@unboundcx/video-sdk-client');
+    return new VideoMeetingClient({ ...options, sdk: this.sdk });
+  }
+
+  /**
+   * End the meeting session server-side. Invalidates the token row in the
+   * `tokens` table and clears the `videoAuthToken` cookie so a stale cookie
+   * from a prior meeting can't be replayed.
+   *
+   * The endpoint is deliberately permissive: accepts expired and
+   * room-mismatched cookies and never returns 401/403 — rejection would
+   * strand stale cookies.
+   *
+   * @param {string} roomId
+   */
+  async endSession(roomId) {
+    this.sdk.validateParams(
+      { roomId },
+      { roomId: { type: 'string', required: true } },
+    );
+    const result = await this.sdk._fetch(
+      `/video/session/end`,
+      'POST',
+      { body: { roomId } },
+      true,
     );
     return result;
   }
